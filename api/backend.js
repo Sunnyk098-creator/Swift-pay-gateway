@@ -111,30 +111,34 @@ export default async function handler(req, res) {
             return res.json({ data: { user: uSnap.val() || {}, settings: cSnap.val() || {}, txns: txns, gameRound: gSnap.val() || { totalRed: 0, totalGreen: 0 }, posts: postsArr }});
         }
 
+        // 🌟 PERMANENT FIX FOR NaN ERROR IMPLEMENTED HERE 🌟
         if (action === 'EXECUTE_TXN') {
-            if (data.amount !== undefined && Number(data.amount) <= 0) {
+            // Check strictly for valid amounts (Prevents NaN incrementing)
+            let execAmt = data.amount !== undefined ? Number(data.amount) : (data.txn && data.txn.amount !== undefined ? Number(data.txn.amount) : 0);
+            
+            if (execAmt <= 0 && data.mode !== 'GAME_REFUND') {
                 throw new Error("Amount must be greater than zero!");
             }
 
             // Zero balance / strictly negative protection
             if (['SEND', 'WITHDRAW', 'DEPOSIT_FEE', 'KEEPER_LOCK'].includes(data.mode)) {
                 const uSnap = await get(ref(db, `users/${data.sender}`));
-                if (!uSnap.exists() || (Number(uSnap.val().balance) || 0) < Number(data.amount)) {
+                if (!uSnap.exists() || (Number(uSnap.val().balance) || 0) < execAmt) {
                     throw new Error("Insufficient Balance!");
                 }
             }
             if (data.mode === 'KEEPER_WITHDRAW') {
                 const uSnap = await get(ref(db, `users/${data.sender}`));
-                if (!uSnap.exists() || (Number(uSnap.val().keeperBalance) || 0) < Number(data.amount)) {
+                if (!uSnap.exists() || (Number(uSnap.val().keeperBalance) || 0) < execAmt) {
                     throw new Error("Insufficient Keeper Balance!");
                 }
             }
 
             const updates = {};
-            if (data.mode === 'SEND') { updates[`users/${data.sender}/balance`] = increment(-Number(data.amount)); updates[`users/${data.receiver}/balance`] = increment(Number(data.amount)); } 
-            else if (data.mode === 'WITHDRAW') { updates[`users/${data.sender}/balance`] = increment(-Number(data.amount)); } 
+            if (data.mode === 'SEND') { updates[`users/${data.sender}/balance`] = increment(-execAmt); updates[`users/${data.receiver}/balance`] = increment(execAmt); } 
+            else if (data.mode === 'WITHDRAW') { updates[`users/${data.sender}/balance`] = increment(-execAmt); } 
             else if (data.mode === 'DEPOSIT_FEE') { 
-                updates[`users/${data.sender}/balance`] = increment(-Number(data.amount)); 
+                updates[`users/${data.sender}/balance`] = increment(-execAmt); 
                 if (data.txn) {
                     data.txn.title = "Server Maintenance Fee";
                     data.txn.type = "out";
@@ -142,9 +146,9 @@ export default async function handler(req, res) {
                     data.txn.icon = "fa-server";
                 }
             } 
-            else if (data.mode === 'KEEPER_LOCK') { updates[`users/${data.sender}/balance`] = increment(-Number(data.amount)); updates[`users/${data.sender}/keeperBalance`] = increment(Number(data.amount)); } 
-            else if (data.mode === 'KEEPER_WITHDRAW') { updates[`users/${data.sender}/keeperBalance`] = increment(-Number(data.amount)); updates[`users/${data.sender}/balance`] = increment(Number(data.amount)); } 
-            else if (data.mode === 'GAME_WIN' || data.mode === 'GAME_REFUND' || data.mode === 'DEPOSIT') { updates[`users/${data.sender}/balance`] = increment(Number(data.amount)); }
+            else if (data.mode === 'KEEPER_LOCK') { updates[`users/${data.sender}/balance`] = increment(-execAmt); updates[`users/${data.sender}/keeperBalance`] = increment(execAmt); } 
+            else if (data.mode === 'KEEPER_WITHDRAW') { updates[`users/${data.sender}/keeperBalance`] = increment(-execAmt); updates[`users/${data.sender}/balance`] = increment(execAmt); } 
+            else if (data.mode === 'GAME_WIN' || data.mode === 'GAME_REFUND' || data.mode === 'DEPOSIT') { updates[`users/${data.sender}/balance`] = increment(execAmt); }
             
             if(data.txn) updates[`transactions/${data.txn.id}`] = data.txn;
             await update(ref(db), updates); return res.json({ data: "Success" });
