@@ -12,7 +12,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const BOT_TOKEN = "8626398661:AAHesyr_ZeCZxSl57P1M-pobesQMKioPhqk";
+const BOT_TOKEN = "8440520277:AAG-DcrzOHZ2jFtvMofUdgxK2ATPFvdwkwM";
 
 // Fast async without awaiting it entirely to prevent late response
 async function sendTelegramMsg(chatId, text) {
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
             date: exactDate, 
             timestamp: Date.now(), 
             icon: "fa-code", 
-            color: "gray", 
+            color: "blue", 
             name: receiverData.name || targetNumber, 
             number: targetNumber,
             senderName: adminData.name || adminPhone,
