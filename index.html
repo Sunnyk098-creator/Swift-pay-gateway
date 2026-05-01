@@ -14,11 +14,20 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .view-section { display: none; opacity: 0; }
         .view-section.active { display: block; animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* NEW CUSTOM ANIMATIONS */
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+        @keyframes gentlePulse { 0% { box-shadow: 0 0 0 0 rgba(37,99,235,0.4); } 70% { box-shadow: 0 0 0 10px rgba(37,99,235,0); } 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); } }
+        
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-gentle-pulse { animation: gentlePulse 2s infinite; }
+        
         .btn-animate { transition: all 0.2s ease; }
-        .btn-animate:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .btn-animate:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25); }
         .btn-animate:active { transform: scale(0.95); }
+        
         .tab-btn.active { background-color: #2563eb; color: white; }
         .tab-btn { background-color: transparent; color: #6b7280; }
         .tab-content { display: none; }
@@ -29,6 +38,7 @@
         .game-coin { transition: all 0.2s; cursor: pointer; }
         .game-coin.selected { transform: scale(1.15) translateY(-5px); border-color: #2563eb; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4); background-color: #eff6ff; }
         .game-coin.disabled { filter: grayscale(100%); opacity: 0.4; cursor: not-allowed; pointer-events: none; transform: scale(0.95); }
+        
         @keyframes popInCrown { 0% { transform: scale(0) translateY(20px) rotate(-20deg); opacity: 0; } 70% { transform: scale(1.3) translateY(-10px) rotate(10deg); opacity: 1; } 100% { transform: scale(1) translateY(0) rotate(0); opacity: 1; } }
         .crown-icon { display: none; position: absolute; top: -40px; left: 50%; margin-left: -24px; font-size: 3rem; color: #60a5fa; animation: popInCrown 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); z-index: 20; }
         .crown-icon.show { display: block; }
@@ -131,7 +141,7 @@
 
     <div id="auth-wrapper" class="fixed inset-0 bg-[#fdfbf7] z-[200] overflow-y-auto hidden">
         <div id="auth-login" class="min-h-screen flex flex-col p-6 items-center justify-center relative">
-            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center text-4xl mb-6 shadow-inner border border-blue-100"><i class="fas fa-bolt"></i></div>
+            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center text-4xl mb-6 shadow-inner border border-blue-100"><i class="fas fa-bolt animate-pulse"></i></div>
             <h1 class="text-3xl font-black italic text-gray-800 tracking-tight mb-1">SWIFT <span class="text-blue-600">PAY</span></h1>
             <p class="text-xs font-bold text-gray-400 tracking-widest mb-10 uppercase">Secure Wallet</p>
             <form onsubmit="event.preventDefault(); processLogin()" class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
@@ -160,7 +170,7 @@
         </div>
 
         <div id="auth-otp" class="min-h-screen flex flex-col p-6 items-center justify-center relative hidden">
-            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4"><i class="fab fa-telegram-plane"></i></div>
+            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4 animate-bounce"><i class="fab fa-telegram-plane"></i></div>
             <h2 class="text-xl font-black mb-2 text-gray-800">VERIFY OTP</h2>
             <p class="text-sm text-gray-500 text-center mb-6 font-medium">We sent a 6-digit code to your Telegram bot.</p>
             <form onsubmit="event.preventDefault(); verifyOTP()" class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
@@ -182,16 +192,6 @@
                 <label class="block text-xs font-bold text-gray-400 mb-1">NEW PIN (4 DIGITS)</label><input type="password" id="reset-new-pin" required maxlength="4" pattern="\d{4}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-6 focus:outline-none focus:border-blue-500 font-bold text-center tracking-widest">
                 <button type="submit" class="btn-animate w-full bg-green-500 text-white font-black py-4 rounded-xl shadow-lg transition-colors tracking-wide">SAVE CHANGES</button>
             </form>
-        </div>
-    </div>
-
-    <div id="gameModal" class="fixed inset-0 bg-black bg-opacity-70 z-[500] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div id="gameModalContent" class="bg-white rounded-3xl p-8 text-center transform scale-90 transition-transform duration-300 max-w-sm w-full mx-4 shadow-2xl relative overflow-hidden">
-            <div id="gameModalBg" class="absolute inset-0 opacity-10 pointer-events-none"></div>
-            <div id="gameModalIcon" class="text-7xl mb-4 relative z-10 drop-shadow-md">🎉</div>
-            <h2 id="gameModalTitle" class="text-3xl font-black mb-2 relative z-10 tracking-wide">YOU WON!</h2>
-            <p id="gameModalText" class="text-gray-600 font-bold mb-6 relative z-10">₹0.00</p>
-            <button onclick="closeGameModal()" class="btn-animate w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl transition-colors relative z-10 tracking-widest text-sm">CONTINUE</button>
         </div>
     </div>
 
@@ -224,13 +224,13 @@
                 <button onclick="toggleSidebar()" class="text-xl text-gray-700 hover:text-blue-600 transition-colors"><i class="fas fa-bars"></i></button>
                 <h1 class="text-xl font-black tracking-widest text-blue-600 italic">SWIFT PAY</h1>
                 <div class="flex items-center gap-4">
-                    <button id="top-tg-btn" class="text-blue-600 text-2xl hover:scale-110 transition-transform cursor-pointer"><i class="fab fa-telegram"></i></button>
+                    <button id="top-tg-btn" onclick="openTelegramLink()" class="text-blue-600 text-2xl hover:scale-110 transition-transform cursor-pointer animate-pulse"><i class="fab fa-telegram"></i></button>
                     <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold border-2 border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors" id="ui-user-initial">U</div>
                 </div>
             </header>
 
             <div class="p-4">
-                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
+                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden transform hover:scale-[1.02] transition-transform duration-300 animate-float">
                     <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-20 rounded-full blur-2xl"></div>
                     <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-indigo-700 opacity-20 rounded-full blur-xl"></div>
                     <div class="flex justify-between items-start mb-6 relative z-10">
@@ -246,18 +246,18 @@
 
             <div class="bg-white rounded-t-3xl pt-6 px-4 pb-6 shadow-[0_-4px_20px_rgba(0,0,0,0.02)] mt-2">
                 <div class="grid grid-cols-4 gap-y-6 gap-x-2">
-                    <button onclick="showView('send')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shadow-sm border border-blue-100"><i class="fas fa-paper-plane"></i></div><span class="text-[10px] font-bold text-gray-600">Send</span></button>
-                    <button onclick="showView('bulk')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shadow-sm border border-sky-100"><i class="fas fa-users"></i></div><span class="text-[10px] font-bold text-gray-600">Bulk</span></button>
-                    <button onclick="showView('add')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-green-50 text-green-500 flex items-center justify-center text-xl shadow-sm border border-green-100"><i class="fas fa-plus"></i></div><span class="text-[10px] font-bold text-gray-600">Add Money</span></button>
-                    <button onclick="showView('withdraw')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-sm border border-red-100"><i class="fas fa-money-bill-transfer"></i></div><span class="text-[10px] font-bold text-gray-600">Withdraw</span></button>
-                    <button onclick="openLifafaMaintenance()" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shadow-sm border border-sky-100"><i class="fas fa-envelope-open-text"></i></div><span class="text-[10px] font-bold text-gray-600">Lifafa</span></button>
-                    <button onclick="showView('gift')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-pink-50 text-pink-500 flex items-center justify-center text-xl shadow-sm border border-pink-100"><i class="fas fa-gift"></i></div><span class="text-[10px] font-bold text-gray-600">Gift Code</span></button>
-                    <button onclick="showView('api')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-gray-50 text-gray-700 flex items-center justify-center text-xl shadow-sm border border-gray-200"><i class="fas fa-code"></i></div><span class="text-[10px] font-bold text-gray-600">API Keys</span></button>
-                    <button onclick="showView('txn')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-500 flex items-center justify-center text-xl shadow-sm border border-teal-100"><i class="fas fa-search-dollar"></i></div><span class="text-[10px] font-bold text-gray-600">TXN Find</span></button>
-                    <button onclick="showView('official')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl shadow-sm border border-blue-200"><i class="fas fa-bullhorn"></i></div><span class="text-[10px] font-bold text-gray-600">Official Post</span></button>
-                    <button onclick="showView('keeper')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl shadow-sm border border-indigo-200"><i class="fas fa-vault"></i></div><span class="text-[10px] font-bold text-gray-600">Keeper</span></button>
-                    <button onclick="showView('game')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-sm border border-red-100"><i class="fas fa-gamepad"></i></div><span class="text-[10px] font-bold text-gray-600">Games</span></button>
-                    <button onclick="showView('help')" class="btn-animate flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl shadow-sm border border-blue-100"><i class="fas fa-headset"></i></div><span class="text-[10px] font-bold text-gray-600">Help</span></button>
+                    <button onclick="showView('send')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shadow-sm border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors"><i class="fas fa-paper-plane"></i></div><span class="text-[10px] font-bold text-gray-600">Send</span></button>
+                    <button onclick="showView('bulk')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shadow-sm border border-sky-100 group-hover:bg-sky-600 group-hover:text-white transition-colors"><i class="fas fa-users"></i></div><span class="text-[10px] font-bold text-gray-600">Bulk</span></button>
+                    <button onclick="showView('add')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-green-50 text-green-500 flex items-center justify-center text-xl shadow-sm border border-green-100 group-hover:bg-green-500 group-hover:text-white transition-colors animate-gentle-pulse"><i class="fas fa-plus"></i></div><span class="text-[10px] font-bold text-gray-600">Add Money</span></button>
+                    <button onclick="showView('withdraw')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-sm border border-red-100 group-hover:bg-red-500 group-hover:text-white transition-colors"><i class="fas fa-money-bill-transfer"></i></div><span class="text-[10px] font-bold text-gray-600">Withdraw</span></button>
+                    <button onclick="openLifafaMaintenance()" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shadow-sm border border-sky-100 group-hover:bg-sky-600 group-hover:text-white transition-colors"><i class="fas fa-envelope-open-text"></i></div><span class="text-[10px] font-bold text-gray-600">Lifafa</span></button>
+                    <button onclick="showView('gift')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-pink-50 text-pink-500 flex items-center justify-center text-xl shadow-sm border border-pink-100 group-hover:bg-pink-500 group-hover:text-white transition-colors"><i class="fas fa-gift"></i></div><span class="text-[10px] font-bold text-gray-600">Gift Code</span></button>
+                    <button onclick="showView('api')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-gray-50 text-gray-700 flex items-center justify-center text-xl shadow-sm border border-gray-200 group-hover:bg-gray-700 group-hover:text-white transition-colors"><i class="fas fa-code"></i></div><span class="text-[10px] font-bold text-gray-600">API Keys</span></button>
+                    <button onclick="showView('txn')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-500 flex items-center justify-center text-xl shadow-sm border border-teal-100 group-hover:bg-teal-500 group-hover:text-white transition-colors"><i class="fas fa-search-dollar"></i></div><span class="text-[10px] font-bold text-gray-600">TXN Find</span></button>
+                    <button onclick="showView('official')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl shadow-sm border border-blue-200 group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fas fa-bullhorn"></i></div><span class="text-[10px] font-bold text-gray-600">Official Post</span></button>
+                    <button onclick="showView('keeper')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl shadow-sm border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><i class="fas fa-vault"></i></div><span class="text-[10px] font-bold text-gray-600">Keeper</span></button>
+                    <button onclick="showView('game')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-sm border border-red-100 group-hover:bg-red-500 group-hover:text-white transition-colors"><i class="fas fa-gamepad"></i></div><span class="text-[10px] font-bold text-gray-600">Games</span></button>
+                    <button onclick="showView('help')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center text-xl shadow-sm border border-blue-100 group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fas fa-headset"></i></div><span class="text-[10px] font-bold text-gray-600">Help</span></button>
                 </div>
             </div>
 
@@ -393,9 +393,9 @@
                     <label class="block text-xs font-bold text-gray-400 mb-2">UPI ID</label>
                     <input type="text" id="with-upi" required placeholder="yourname@upi" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:border-blue-500 focus:bg-white font-mono">
                     <label class="block text-xs font-bold text-gray-400 mb-2">AMOUNT (₹)</label>
-                    <input type="number" id="with-amt" required min="10" placeholder="Minimum ₹10" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus:outline-none focus:border-blue-500 focus:bg-white font-bold">
+                    <input type="number" id="with-amt" required min="5" placeholder="Minimum ₹5" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm mb-5 focus:outline-none focus:border-blue-500 focus:bg-white font-bold">
                     <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-6 text-sm space-y-2">
-                        <div class="flex justify-between text-gray-600"><span>Minimum Withdraw</span><span class="font-bold text-blue-700">₹10</span></div>
+                        <div class="flex justify-between text-gray-600"><span>Minimum Withdraw</span><span class="font-bold text-blue-700">₹5</span></div>
                         <div class="flex justify-between text-gray-600"><span>Processing Time</span><span class="font-bold text-blue-700">Within 24 hours</span></div>
                         <div class="flex justify-between text-gray-600"><span>Withdrawal Fee</span><span class="font-bold text-green-600">₹0 (FREE)</span></div>
                     </div>
@@ -680,6 +680,14 @@
             return true;
         }
 
+        function openTelegramLink() {
+            if(globalSettings && globalSettings.telegramChannel) {
+                window.open(globalSettings.telegramChannel, '_blank');
+            } else {
+                window.open('https://t.me/SwiftPay', '_blank');
+            }
+        }
+
         // --- NEW MAINTENANCE HELPERS ---
         function openLifafaMaintenance() {
             document.getElementById('lifafa-maintenance-overlay').classList.remove('hidden');
@@ -935,7 +943,8 @@
             if(isNaN(amt) || amt <= 0) return showToast("Invalid amount!");
             
             let txn = createTxnObj('in', 'Deposit via UTR', amt, 'Pending', 'fa-clock', 'blue', 'Self Deposit', utr);
-            await apiCall('EXECUTE_TXN', { mode: 'DEPOSIT', sender: currentUser.phone, txn });
+            // FIXED BUG: amount added strictly to payload so backend gets it smoothly.
+            await apiCall('EXECUTE_TXN', { mode: 'DEPOSIT', sender: currentUser.phone, amount: amt, txn });
             
             let adminChatId = globalSettings.adminChatId || null; 
             if (adminChatId) sendTelegramMsg(adminChatId, `🔔 DEPOSIT REQ\nUser: ${currentUser.name}\nAmount: ₹${amt}\nUTR: ${utr}\nTXN: ${txn.id}`);
@@ -966,7 +975,11 @@
             let upi = document.getElementById('with-upi').value; 
             let amt = parseFloat(document.getElementById('with-amt').value);
             if(isNaN(amt) || amt <= 0) return showToast("Invalid amount!");
-            if(amt < 10) return alert("Minimum withdrawal is ₹10"); if(amt > currentBalance) return showToast("Insufficient Balance!");
+            
+            // MINIMUM WITHDRAWAL REDUCED TO ₹5
+            if(amt < 5) return alert("Minimum withdrawal is ₹5"); 
+            if(amt > currentBalance) return showToast("Insufficient Balance!");
+            
             let txn = createTxnObj('out', 'Withdrawal Request', amt, 'Pending', 'fa-university', 'blue', 'Bank Withdraw', upi);
             
             apiCall('EXECUTE_TXN', { mode: 'WITHDRAW', sender: currentUser.phone, amount: amt, txn }).catch(e => console.error(e));
