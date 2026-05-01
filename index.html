@@ -1192,7 +1192,7 @@
         }
 
         async function placeGameBet(color) {
-            if(currentBalance < 1) return showToast("You need minimum ₹1 for this feature");
+            await syncData().catch(()=>{}); // FIX: Sync amount before betting to prevent scam
             if(!checkCooldown()) return;
             if(gameState === 'DISTRIBUTING' || gameTimer <= 5) return showToast("Bets are closed! Wait for next round.");
             let amt = selectedGameCoin; 
@@ -1411,10 +1411,9 @@
         function copyText(text) { navigator.clipboard.writeText(text); showToast("Copied successfully!"); }
         
         function showView(viewId) { 
-            if ((viewId === 'send' || viewId === 'game' || viewId === 'bulk' || viewId === 'scan' || viewId === 'gift' || viewId === 'withdraw') && currentBalance < 1) {
-                showToast("You need minimum ₹1 for this feature");
-                return;
-            }
+            // FIX: Instantly sync data on every view change to prevent scam
+            if(currentUser) { syncData().catch(()=>{}); } 
+            
             if (viewId === 'official') markPostsAsRead();
             
             // Hide bottom nav if scanning
@@ -1494,7 +1493,7 @@
         function searchTxn() { let id = document.getElementById('search-txn-id').value; let found = transactions.find(t => t.id.toLowerCase() === id.toLowerCase()); if(found) openTxnModal(found.id); else alert("Transaction Not Found"); }
 
         function startScanner() {
-            if (currentBalance < 1) return;
+            // FIX: Removed ₹1 check
             document.getElementById('scanner-container').classList.remove('hidden'); document.getElementById('scan-result').classList.add('hidden');
             if(html5QrcodeScanner) html5QrcodeScanner.clear();
             html5QrcodeScanner = new Html5Qrcode("reader");
