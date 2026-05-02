@@ -283,72 +283,66 @@
 
         <div id="view-home" class="view-section active">
             <header class="flex justify-between items-center p-5 sticky top-0 z-30 bg-[#fdfbf7]/90 backdrop-blur-md">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="w-10 h-10 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-50 transition-colors"><i class="fas fa-bars"></i></button>
-                    <h1 class="text-xl font-black tracking-tight text-gray-900">Swift<span class="text-indigo-600">Pay</span></h1>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button id="top-tg-btn" onclick="openTelegramLink()" class="w-10 h-10 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors shadow-sm border border-blue-100"><i class="fab fa-telegram-plane text-lg"></i></button>
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-black border-2 border-white shadow-md cursor-pointer hover:scale-105 transition-transform" id="ui-user-initial">U</div>
-                </div>
+                <button onclick="toggleSidebar()" class="w-10 h-10 bg-blue-50 rounded-full shadow-sm flex items-center justify-center text-blue-600 font-bold hover:bg-blue-100 transition-colors"><i class="fas fa-bars"></i></button>
+                <h1 class="text-sm font-black tracking-widest text-blue-800 uppercase">SwiftPay Wallet</h1>
+                <button onclick="showView('keeper')" class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shadow-sm hover:bg-blue-100 transition-colors"><i class="fas fa-wallet"></i></button>
             </header>
 
             <div class="px-5 pt-2 pb-6">
-                <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 p-7 shadow-[0_20px_40px_-15px_rgba(79,70,229,0.5)] animate-float text-white mb-2">
-                    <div class="absolute -right-16 -top-16 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl mix-blend-overlay"></div>
-                    <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-400 opacity-20 rounded-full blur-2xl mix-blend-overlay"></div>
-                    
-                    <div class="flex justify-between items-start mb-8 relative z-10">
-                        <div>
-                            <h2 class="text-lg font-black tracking-wide drop-shadow-sm" id="ui-user-name">User Name</h2>
-                            <p class="text-[11px] opacity-80 mt-1 font-mono tracking-widest font-bold" id="ui-user-phone">Phone</p>
-                        </div>
-                        <div class="glass-card-dark text-[10px] font-black px-3 py-1.5 rounded-xl flex items-center gap-1.5 uppercase tracking-wider">
-                            <i class="fas fa-check-circle text-green-300"></i> Active
-                        </div>
-                    </div>
-                    
-                    <div class="relative z-10 flex justify-between items-end">
-                        <div>
-                            <p class="text-[10px] opacity-80 mb-1 uppercase tracking-widest font-bold">Total Balance</p>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-3xl font-medium opacity-90">₹</span>
-                                <h3 class="text-5xl font-black tracking-tighter global-balance drop-shadow-md">0.00</h3>
-                            </div>
-                        </div>
-                        <button onclick="showView('add')" class="w-12 h-12 rounded-2xl bg-white text-indigo-600 flex items-center justify-center text-xl shadow-lg hover:scale-110 transition-transform"><i class="fas fa-plus"></i></button>
+                <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-blue-500 to-indigo-600 p-8 shadow-lg shadow-indigo-200 text-center text-white mb-6">
+                    <p class="text-xs uppercase tracking-widest font-bold opacity-90 mb-2">Total Balance</p>
+                    <div class="flex items-center justify-center gap-1">
+                        <span class="text-3xl font-medium opacity-90">₹</span>
+                        <h3 class="text-5xl font-black tracking-tighter global-balance">0.00</h3>
                     </div>
                 </div>
-            </div>
 
-            <div class="px-5">
-                <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 pl-1">All Features</p>
-                <div class="bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100">
-                    <div class="grid grid-cols-4 gap-y-6 gap-x-2">
-                        <button onclick="showView('send')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shadow-inner border border-indigo-100/50 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><i class="fas fa-paper-plane"></i></div><span class="text-[10px] font-black text-gray-500">Send</span></button>
-                        <button onclick="showView('add')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shadow-inner border border-blue-100/50 group-hover:bg-blue-600 group-hover:text-white transition-colors"><i class="fas fa-wallet"></i></div><span class="text-[10px] font-black text-gray-500">Add</span></button>
-                        <button onclick="showView('withdraw')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shadow-inner border border-purple-100/50 group-hover:bg-purple-600 group-hover:text-white transition-colors"><i class="fas fa-building-columns"></i></div><span class="text-[10px] font-black text-gray-500">Payout</span></button>
-                        <button onclick="showView('bulk')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center text-xl shadow-inner border border-cyan-100/50 group-hover:bg-cyan-600 group-hover:text-white transition-colors"><i class="fas fa-users"></i></div><span class="text-[10px] font-black text-gray-500">Bulk</span></button>
+                <div class="grid grid-cols-4 gap-3 mb-4">
+                    <button onclick="showView('add')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl mb-1 group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fas fa-plus"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Add Fund</span>
+                    </button>
+                    <button onclick="showView('withdraw')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl mb-1 group-hover:bg-emerald-500 group-hover:text-white transition-colors"><i class="fas fa-building-columns"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Withdraw</span>
+                    </button>
+                    <button onclick="showView('send')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center text-xl mb-1 group-hover:bg-purple-500 group-hover:text-white transition-colors"><i class="fas fa-paper-plane"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Pay</span>
+                    </button>
+                    <button onclick="showView('txn')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center text-xl mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors"><i class="fas fa-history"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">History</span>
+                    </button>
+                </div>
 
-                        <button onclick="openLifafaMaintenance()" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl shadow-inner border border-rose-100/50 group-hover:bg-rose-500 group-hover:text-white transition-colors"><i class="fas fa-envelope-open-text"></i></div><span class="text-[10px] font-black text-gray-500">Lifafa</span></button>
-                        <button onclick="showView('gift')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-pink-50 text-pink-500 flex items-center justify-center text-xl shadow-inner border border-pink-100/50 group-hover:bg-pink-500 group-hover:text-white transition-colors"><i class="fas fa-gift"></i></div><span class="text-[10px] font-black text-gray-500">Gift</span></button>
-                        <button onclick="showView('keeper')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl shadow-inner border border-amber-100/50 group-hover:bg-amber-500 group-hover:text-white transition-colors"><i class="fas fa-vault"></i></div><span class="text-[10px] font-black text-gray-500">Vault</span></button>
-                        <button onclick="showView('game')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-xl shadow-inner border border-red-100/50 group-hover:bg-red-500 group-hover:text-white transition-colors"><i class="fas fa-gamepad"></i></div><span class="text-[10px] font-black text-gray-500">Games</span></button>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <button onclick="showView('gift')" class="btn-animate flex flex-col items-center justify-center bg-white p-5 rounded-2xl shadow-sm border border-gray-50 gap-3 group">
+                        <div class="w-10 h-10 rounded-full bg-pink-50 text-pink-500 flex items-center justify-center text-xl group-hover:scale-110 transition-transform"><i class="fas fa-gift"></i></div>
+                        <span class="text-[10px] font-black text-gray-700 uppercase tracking-widest">Gift Codes</span>
+                    </button>
+                    <button onclick="showView('bulk')" class="btn-animate flex flex-col items-center justify-center bg-white p-5 rounded-2xl shadow-sm border border-gray-50 gap-3 group">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl group-hover:scale-110 transition-transform"><i class="fas fa-layer-group"></i></div>
+                        <span class="text-[10px] font-black text-gray-700 uppercase tracking-widest">Bulk Pay</span>
+                    </button>
+                </div>
 
-                        <button onclick="showView('api')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-gray-100 text-gray-700 flex items-center justify-center text-xl shadow-inner border border-gray-200 group-hover:bg-gray-700 group-hover:text-white transition-colors"><i class="fas fa-code"></i></div><span class="text-[10px] font-black text-gray-500">API Key</span></button>
-                        <button onclick="showView('txn')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl shadow-inner border border-teal-100/50 group-hover:bg-teal-600 group-hover:text-white transition-colors"><i class="fas fa-search-dollar"></i></div><span class="text-[10px] font-black text-gray-500">Find TXN</span></button>
-                        <button onclick="showView('official')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shadow-inner border border-sky-100/50 group-hover:bg-sky-600 group-hover:text-white transition-colors"><i class="fas fa-bullhorn"></i></div><span class="text-[10px] font-black text-gray-500">Updates</span></button>
-                        <button onclick="showView('help')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shadow-inner border border-emerald-100/50 group-hover:bg-emerald-600 group-hover:text-white transition-colors"><i class="fas fa-headset"></i></div><span class="text-[10px] font-black text-gray-500">Support</span></button>
+                <button onclick="openLifafaMaintenance()" class="btn-animate w-full flex items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-50 gap-4 mb-6 relative group">
+                    <div class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform"><i class="fas fa-envelope-open-text"></i></div>
+                    <div class="text-left">
+                        <h3 class="text-sm font-black text-gray-800">Lifafa System</h3>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Create & Share Giveaways</p>
                     </div>
-                </div>
-            </div>
+                    <i class="fas fa-chevron-right absolute right-5 text-gray-300"></i>
+                </button>
 
-            <div class="px-5 mt-8">
-                <div class="flex justify-between items-end mb-4 pl-1">
-                    <h3 class="font-black text-gray-900 text-lg tracking-tight">Recent Activity</h3>
-                    <button onclick="showView('txn')" class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors">See All</button>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">More Features</p>
+                <div class="grid grid-cols-4 gap-3 bg-white p-4 rounded-2xl shadow-sm border border-gray-50">
+                    <button onclick="showView('game')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-lg"><i class="fas fa-gamepad"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">Games</span></button>
+                    <button onclick="showView('api')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-lg"><i class="fas fa-code"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">API Key</span></button>
+                    <button onclick="showView('official')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center text-lg"><i class="fas fa-bullhorn"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">Updates</span></button>
+                    <button onclick="showView('help')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg"><i class="fas fa-headset"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">Support</span></button>
                 </div>
-                <div id="home-txn-list" class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col p-2 space-y-1"></div>
             </div>
         </div>
 
@@ -1065,7 +1059,6 @@
             if(isNaN(amt) || amt <= 0) return showToast("Invalid amount!");
             
             let txn = createTxnObj('in', 'Deposit via UTR', amt, 'Pending', 'fa-clock', 'blue', 'Self Deposit', utr);
-            // FIXED BUG: passing amount cleanly to fix NaN
             await apiCall('EXECUTE_TXN', { mode: 'DEPOSIT', sender: currentUser.phone, amount: amt, txn });
             
             let adminChatId = globalSettings.adminChatId || null; 
@@ -1098,7 +1091,6 @@
             let amt = parseFloat(document.getElementById('with-amt').value);
             if(isNaN(amt) || amt <= 0) return showToast("Invalid amount!");
             
-            // MINIMUM WITHDRAWAL REDUCED TO ₹5
             if(amt < 5) return alert("Minimum withdrawal is ₹5"); 
             if(amt > currentBalance) return showToast("Insufficient Balance!");
             
@@ -1192,7 +1184,7 @@
         }
 
         async function placeGameBet(color) {
-            await syncData().catch(()=>{}); // FIX: Sync amount before betting to prevent scam
+            await syncData().catch(()=>{}); 
             if(!checkCooldown()) return;
             if(gameState === 'DISTRIBUTING' || gameTimer <= 5) return showToast("Bets are closed! Wait for next round.");
             let amt = selectedGameCoin; 
@@ -1411,12 +1403,10 @@
         function copyText(text) { navigator.clipboard.writeText(text); showToast("Copied successfully!"); }
         
         function showView(viewId) { 
-            // FIX: Instantly sync data on every view change to prevent scam
             if(currentUser) { syncData().catch(()=>{}); } 
             
             if (viewId === 'official') markPostsAsRead();
             
-            // Hide bottom nav if scanning
             if(viewId === 'scan') {
                 document.getElementById('bottom-nav-container').classList.add('hide-nav');
             } else {
@@ -1493,7 +1483,6 @@
         function searchTxn() { let id = document.getElementById('search-txn-id').value; let found = transactions.find(t => t.id.toLowerCase() === id.toLowerCase()); if(found) openTxnModal(found.id); else alert("Transaction Not Found"); }
 
         function startScanner() {
-            // FIX: Removed ₹1 check
             document.getElementById('scanner-container').classList.remove('hidden'); document.getElementById('scan-result').classList.add('hidden');
             if(html5QrcodeScanner) html5QrcodeScanner.clear();
             html5QrcodeScanner = new Html5Qrcode("reader");
