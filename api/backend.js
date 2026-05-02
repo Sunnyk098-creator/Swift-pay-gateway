@@ -113,9 +113,9 @@ export default async function handler(req, res) {
                 }
             }).catch(()=>{});
 
-            // Sending serverTime for global timer synchronization
+            // Sending accurate server time globally
             return res.json({ data: { 
-                serverTime: Date.now(), 
+                serverTime: Date.now(),
                 user: uSnap.val() || {}, 
                 settings: cSnap.val() || {}, 
                 txns: txns, 
