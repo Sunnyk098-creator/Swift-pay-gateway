@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get, update, increment } from "firebase/database";
 
-// Updated Firebase Config matching backend.js
+// Updated Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCvzeg8_7ym5QYcDcfKbtC09JM0GkCVDn8",
   authDomain: "swiftpay-459cb.firebaseapp.com",
@@ -42,19 +42,38 @@ export default async function handler(req, res) {
     try {
         const { key, paytm, amount, comment, number } = req.query;
         
-        const safeKey = String(key || "").trim();
+        let rawKey = String(key || "").trim();
         const targetNumber = String(paytm || number || "").trim(); 
+        const withdrawAmount = Number(amount);
+
+        // --- SMART KEY EXTRACTION (Fix for Bot sending full URL) ---
+        let safeKey = rawKey;
+        
+        // Agar bot ne galti se pura URL bhej diya (e.g., SP-http://...api?key=SP-XXXXX)
+        if (rawKey.includes("http") && rawKey.includes("key=")) {
+            const urlMatch = rawKey.match(/key=(SP-[a-zA-Z0-9]+)/i);
+            if (urlMatch) {
+                safeKey = urlMatch[1].toUpperCase();
+            }
+        } else {
+            // Normal key clean up (agar aage peeche kuch extra character aa gaya ho)
+            const cleanMatch = rawKey.match(/(SP-[a-zA-Z0-9]{6,15})/i);
+            if (cleanMatch) {
+                safeKey = cleanMatch[1].toUpperCase();
+            }
+        }
+        // -------------------------------------------------------------
 
         if (!safeKey) {
             return res.status(400).json({ status: "error", message: "Missing API Key!" });
         }
 
-        // FIREBASE PATH VALIDATION: Prevent crash if bot/user sends an invalid key (like a URL)
+        // Failsafe validation (agar key properly extract nahi hui)
         if (/[.#$\[\]\/]/.test(safeKey)) {
-            return res.status(401).json({ status: "error", message: "Invalid API Key format! Make sure you are only sending the key, not the full URL." });
+            return res.status(401).json({ status: "error", message: "Invalid API Key format!" });
         }
 
-        // Naya Tarika: Fast API verification matching backend.js
+        // Fast API verification
         const apiKeySnap = await get(ref(db, `api_keys/${safeKey}`));
         
         if (!apiKeySnap.exists()) {
@@ -63,7 +82,7 @@ export default async function handler(req, res) {
 
         const adminPhone = String(apiKeySnap.val());
         
-        // Admin ka main data fetch karna
+        // Admin data fetch
         const adminSnap = await get(ref(db, `users/${adminPhone}`));
         if (!adminSnap.exists()) {
             return res.status(401).json({ status: "error", message: "Admin account not found!" });
@@ -75,7 +94,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ status: "error", message: "Target number and amount are required." });
         }
 
-        const withdrawAmount = Number(amount);
         if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
             return res.status(400).json({ status: "error", message: "Invalid amount provided!" });
         }
@@ -108,7 +126,7 @@ export default async function handler(req, res) {
         updates[`users/${adminPhone}/balance`] = increment(-withdrawAmount);
         updates[`users/${targetNumber}/balance`] = increment(withdrawAmount);
 
-        // Record Transaction exactly like backend.js standard format
+        // Record Transaction
         updates[`transactions/${txnId}`] = { 
             id: txnId, 
             type: "out", 
@@ -117,7 +135,7 @@ export default async function handler(req, res) {
             status: "Success", 
             date: exactDate, 
             timestamp: Date.now(), 
-            icon: "fa-bolt", // Matches frontend UI theme
+            icon: "fa-bolt", 
             color: "blue", 
             name: receiverData.name || targetNumber, 
             number: targetNumber,
