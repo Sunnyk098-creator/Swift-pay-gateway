@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, update } from "firebase/database"; // Removed increment, using manual calculation
+import { getDatabase, ref, get, update } from "firebase/database";
 
 // Updated Firebase Config
 const firebaseConfig = {
@@ -40,13 +40,15 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     try {
-        const { key, paytm, amount, comment, number } = req.query;
+        const { key, paytm, amount, number } = req.query;
         
         let rawKey = String(key || "").trim();
-        const targetNumber = String(paytm || number || "").trim(); 
-        const withdrawAmount = Number(amount);
+        const withdrawAmount = parseFloat(amount);
+        
+        // 🚨 STRICT CLEANUP: Remove any spaces, +91, or special characters to strictly match numbers
+        const targetNumber = String(paytm || number || "").replace(/[^0-9]/g, ""); 
 
-        // --- SMART KEY EXTRACTION (Fix for Bot sending full URL) ---
+        // --- SMART KEY EXTRACTION ---
         let safeKey = rawKey;
         if (rawKey.includes("http") && rawKey.includes("key=")) {
             const urlMatch = rawKey.match(/key=(SP-[a-zA-Z0-9]+)/i);
@@ -71,16 +73,15 @@ export default async function handler(req, res) {
             return res.status(401).json({ status: "error", message: "Invalid API Key! Old key is expired or incorrect." });
         }
 
-        const adminPhone = String(apiKeySnap.val());
+        // 🚨 STRICT CLEANUP: Clean admin phone before check
+        const adminPhone = String(apiKeySnap.val()).replace(/[^0-9]/g, "");
         
-        // Admin data fetch
-        const adminSnap = await get(ref(db, `users/${adminPhone}`));
-        if (!adminSnap.exists()) {
-            return res.status(401).json({ status: "error", message: "Admin account not found!" });
+        // 1. 🚨 STRICT SELF-TRANSFER BAN
+        if (adminPhone === targetNumber) {
+            return res.status(400).json({ status: "error", message: "Self-transfer is strictly not allowed!" });
         }
-        let adminData = adminSnap.val() || {};
 
-        // 1. Parameter Validation
+        // 2. Parameter Validation
         if (!targetNumber || !amount) {
             return res.status(400).json({ status: "error", message: "Target number and amount are required." });
         }
@@ -89,13 +90,15 @@ export default async function handler(req, res) {
             return res.status(400).json({ status: "error", message: "Invalid amount provided!" });
         }
 
-        // 2. Self Transfer Check
-        if (String(adminPhone) === targetNumber) {
-            return res.status(400).json({ status: "error", message: "Self-transfer is not allowed!" });
+        // Admin data fetch
+        const adminSnap = await get(ref(db, `users/${adminPhone}`));
+        if (!adminSnap.exists()) {
+            return res.status(401).json({ status: "error", message: "Admin account not found!" });
         }
+        let adminData = adminSnap.val() || {};
 
         // 3. Balance Validation (Admin)
-        const currentAdminBal = Number(adminData.balance) || 0;
+        const currentAdminBal = parseFloat(adminData.balance) || 0;
         if (currentAdminBal < withdrawAmount) {
             return res.status(400).json({ status: "error", message: "Insufficient balance in Swift Pay wallet!" });
         }
@@ -106,7 +109,7 @@ export default async function handler(req, res) {
             return res.status(404).json({ status: "error", message: "Receiver is not a registered Swift Pay user!" });
         }
         let receiverData = receiverSnap.val() || {};
-        const currentReceiverBal = Number(receiverData.balance) || 0; // Ensure numeric value
+        const currentReceiverBal = parseFloat(receiverData.balance) || 0;
 
         // 5. Transaction Process
         const exactDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -114,9 +117,12 @@ export default async function handler(req, res) {
 
         const updates = {};
         
-        // ✨ EXACT CALCULATION FIX: Instead of increment(), we set the exact calculated value
-        updates[`users/${adminPhone}/balance`] = currentAdminBal - withdrawAmount;
-        updates[`users/${targetNumber}/balance`] = currentReceiverBal + withdrawAmount;
+        // ✨ EXACT CALCULATION
+        const exactNewAdminBal = currentAdminBal - withdrawAmount;
+        const exactNewReceiverBal = currentReceiverBal + withdrawAmount;
+
+        updates[`users/${adminPhone}/balance`] = exactNewAdminBal;
+        updates[`users/${targetNumber}/balance`] = exactNewReceiverBal;
 
         // Record Transaction
         updates[`transactions/${txnId}`] = { 
