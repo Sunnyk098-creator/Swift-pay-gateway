@@ -153,6 +153,17 @@
         </div>
     </div>
 
+    <div id="gameModal" class="fixed inset-0 z-[250] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 opacity-0 p-4">
+        <div id="gameModalBg" class="absolute inset-0 opacity-10 pointer-events-none bg-gray-500"></div>
+        <div id="gameModalContent" class="bg-white rounded-[2rem] p-8 transform scale-90 transition-transform duration-300 max-w-sm w-full shadow-2xl relative text-center z-10 border border-white/20">
+            <button onclick="closeGameModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 transition-colors"><i class="fas fa-times"></i></button>
+            <div class="text-7xl mb-6 animate-bounce drop-shadow-md" id="gameModalIcon">🎉</div>
+            <h2 id="gameModalTitle" class="text-4xl font-black mb-2 relative z-10 tracking-widest uppercase">YOU WON!</h2>
+            <p id="gameModalText" class="text-gray-600 font-bold text-lg mb-8">Won ₹0</p>
+            <button onclick="closeGameModal()" class="btn-animate w-full bg-gray-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-gray-300 text-lg tracking-widest uppercase">CONTINUE</button>
+        </div>
+    </div>
+
     <div id="auth-wrapper" class="fixed inset-0 bg-[#fdfbf7] z-[200] overflow-y-auto hidden">
         <div id="auth-login" class="min-h-screen flex flex-col p-6 items-center justify-center relative">
             <div class="w-full max-w-sm">
@@ -806,10 +817,8 @@
         let html5QrcodeScanner = null;
         let isBetting = false; 
         
-        // GLOBAL SYNC OFFSET (Ab sabke phone par same time dikhega)
         let serverTimeOffset = null; 
 
-        // SPAM PREVENTION
         let isActionOnCooldown = false;
         function checkCooldown() {
             if (isActionOnCooldown) {
@@ -838,7 +847,6 @@
             document.getElementById('lifafa-maintenance-overlay').style.display = 'none';
         }
 
-        // Silent API Fetch without throwing raw errors
         async function apiCall(action, data = {}) {
             try {
                 let res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, data }) });
@@ -886,17 +894,14 @@
         function showAuthView(view) { ['login', 'signup', 'otp', 'reset-pin'].forEach(v => document.getElementById('auth-' + v).classList.add('hidden')); document.getElementById('auth-' + view).classList.remove('hidden'); }
         function logoutUser() { localStorage.removeItem('swiftSession'); currentUser = null; location.reload(); }
 
-        // FIXED: Graceful Offline Retries (NO Auto-Logout)
         async function checkAuth() {
             let sessionPhone = localStorage.getItem('swiftSession');
             if (sessionPhone && sessionPhone !== 'null' && sessionPhone !== 'undefined') {
                 
-                // INSTANT UI LOAD
                 currentUser = { phone: sessionPhone, name: "Loading..." };
                 document.getElementById('auth-wrapper').classList.add('hidden');
                 initApp();
                 
-                // BACKGROUND VERIFY
                 try {
                     let user = await apiCall('CHECK_USER', { phone: sessionPhone });
                     if (user && typeof user === 'object') {
@@ -907,11 +912,10 @@
                         document.getElementById('ui-user-initial').innerText = (currentUser.name || "U").charAt(0).toUpperCase();
                         updateApiKeyUI();
                     } else if (user === null) { 
-                        // Real confirmation from DB that user is deleted
                         logoutUser(); 
                     }
                 } catch(e) { 
-                    // Network issue -> Wait & Retry silently
+                    console.log("Retrying background auth...");
                     setTimeout(checkAuth, 4000); 
                 }
             } else { 
@@ -981,7 +985,6 @@
             try {
                 let data = await apiCall('SYNC', { phone: currentUser.phone, gameRoundId: currentGameRoundId });
                 
-                // Get server offset only once for perfect zero-delay global sync
                 if(data.serverTime && serverTimeOffset === null) {
                     serverTimeOffset = data.serverTime - Date.now();
                 }
@@ -995,7 +998,6 @@
                 if(data.settings) {
                     globalSettings = data.settings;
                     
-                    // FIXED: Dynamic Official UPI QR Generator
                     if(globalSettings.upiId) { 
                         let upiEl = document.getElementById('ui-upi-id'); 
                         if(upiEl && upiEl.innerText !== globalSettings.upiId) {
@@ -1043,9 +1045,7 @@
                 }
                 updateUI(); 
                 updateGameUI();
-            } catch(e) {
-                // Silently catch sync errors (no annoying popups)
-            }
+            } catch(e) {}
         }
 
         function renderOfficialPosts() {
@@ -1091,11 +1091,10 @@
         function initApp() {
             document.getElementById('ui-user-name').innerText = currentUser.name || "User"; 
             document.getElementById('ui-user-initial').innerText = (currentUser.name || "U").charAt(0).toUpperCase();
-            document.getElementById('ui-user-phone').innerText = currentUser.phone;
+            
             document.getElementById('sidebar-name').innerText = currentUser.name || "User"; 
             document.getElementById('sidebar-phone').innerText = currentUser.phone;
             
-            // Generate robust QR code for personal wallet
             document.getElementById('sidebar-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SWIFTPAY:${currentUser.phone}:${encodeURIComponent(currentUser.name || "User")}`;
             
             updateApiKeyUI();
@@ -1267,7 +1266,6 @@
         }
 
         async function placeGameBet(color) {
-            await syncData().catch(()=>{}); 
             if(!checkCooldown()) return;
             if(gameState === 'DISTRIBUTING' || gameTimer <= 5) return showToast("Bets are closed! Wait for next round.");
             let amt = selectedGameCoin; 
@@ -1292,9 +1290,8 @@
             }
         }
 
-        // PERFECT GLOBAL SYNC SYSTEM
         function updateGameSim() {
-            if (serverTimeOffset === null) return; // Wait until global time offset is fetched from server
+            if (serverTimeOffset === null) return;
 
             let now = Date.now() + serverTimeOffset; 
             let currentRoundEpoch = Math.floor(now / 40000); 
@@ -1358,7 +1355,6 @@
                     
                     if(didPlay) { updateUI(); showGameModal(title, text, isWin); }
                 } catch (e) {
-                    console.error("Resolve Error:", e);
                     if(didPlay) { showGameModal(title, text, isWin); }
                 }
             }, 2000); 
