@@ -357,7 +357,7 @@
                         <button onclick="showView('txn')" class="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors">Search</button>
                     </div>
                     <div id="home-txn-list" class="bg-white rounded-[2rem] p-3 shadow-sm border border-gray-50 flex flex-col gap-1">
-                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -799,6 +799,9 @@
         let gameState = 'BETTING'; 
         let html5QrcodeScanner = null;
         let isBetting = false; 
+        
+        // NEW: Global Sync offset logic
+        let serverTimeOffset = 0; 
 
         // SPAM PREVENTION
         let isActionOnCooldown = false;
@@ -835,7 +838,7 @@
                 let result = await res.json();
                 if(!res.ok || result.error) throw new Error(result.error || "Server error");
                 return result.data;
-            } catch(err) { showToast(err.message); throw err; }
+            } catch(err) { throw err; }
         }
 
         async function sendTelegramMsg(chatId, text) {
@@ -874,19 +877,29 @@
         function showAuthView(view) { ['login', 'signup', 'otp', 'reset-pin'].forEach(v => document.getElementById('auth-' + v).classList.add('hidden')); document.getElementById('auth-' + view).classList.remove('hidden'); }
         function logoutUser() { localStorage.removeItem('swiftSession'); currentUser = null; location.reload(); }
 
+        // AUTO LOGOUT FIXED: Only logout if explicit null response is returned from DB (User not found)
         async function checkAuth() {
             let sessionPhone = localStorage.getItem('swiftSession');
-            if (sessionPhone) {
+            if (sessionPhone && sessionPhone !== 'null' && sessionPhone !== 'undefined') {
                 try {
                     let user = await apiCall('CHECK_USER', { phone: sessionPhone });
-                    if (user) {
+                    if (user && typeof user === 'object') {
                         currentUser = user; currentUser.phone = sessionPhone;
                         if(currentUser.isBanned) { document.getElementById('banned-wrapper').classList.remove('hidden'); document.getElementById('banned-wrapper').style.display = 'flex'; return; }
                         if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); }
                         document.getElementById('auth-wrapper').classList.add('hidden'); initApp();
-                    } else { logoutUser(); }
-                } catch(e) { logoutUser(); }
-            } else { document.getElementById('auth-wrapper').classList.remove('hidden'); showAuthView('login'); }
+                    } else if (user === null) { 
+                        logoutUser(); 
+                    }
+                } catch(e) { 
+                    // Network timeout or cold start fix: Do not log out. Just retry.
+                    console.log("Retrying connection...");
+                    showToast("Connecting to server...");
+                    setTimeout(checkAuth, 3000); 
+                }
+            } else { 
+                document.getElementById('auth-wrapper').classList.remove('hidden'); showAuthView('login'); 
+            }
         }
 
         async function processLogin() {
@@ -896,7 +909,7 @@
                 localStorage.setItem('swiftSession', phone); currentUser = user; currentUser.phone = phone; 
                 if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); } 
                 document.getElementById('auth-wrapper').classList.add('hidden'); initApp(); 
-            } catch(e) {}
+            } catch(e) { showToast(e.message || "Login failed"); }
         }
 
         async function processSignupStep1() {
@@ -907,7 +920,7 @@
                 let btn = document.getElementById('btn-signup-otp'); btn.innerText = "SENDING..."; btn.disabled = true;
                 let success = await sendTelegramMsg(telegram, `🔐 Your OTP Code\n📲 OTP: ${pendingOTP}`); btn.innerText = "SEND OTP TO TELEGRAM"; btn.disabled = false;
                 if(success) { showToast("OTP Sent!"); showAuthView('otp'); } else { alert("Could not send OTP. Start the bot first!"); }
-            } catch(e) {}
+            } catch(e) { showToast("Registration failed"); }
         }
 
         async function processResetPinStep1() {
@@ -917,7 +930,7 @@
                 pendingOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpMode = 'reset_pin';
                 let success = await sendTelegramMsg(user.tgUserId, `🔐 Your OTP Code\n📲 OTP: ${pendingOTP}`);
                 if(success) { showToast("OTP Sent!"); showAuthView('otp'); } else { alert("Failed to send OTP."); }
-            } catch(e) {}
+            } catch(e) { showToast("Error finding user"); }
         }
 
         async function processResetPinStep2() {
@@ -944,13 +957,19 @@
             popupTimer = setTimeout(() => {
                 popup.classList.add('hidden');
                 popup.classList.remove('flex');
-            }, 2000); // 2 SECONDS DELAY
+            }, 2000); 
         }
 
         async function syncData() {
             if(!currentUser) return;
             try {
                 let data = await apiCall('SYNC', { phone: currentUser.phone, gameRoundId: currentGameRoundId });
+                
+                // Set Global Server Time Offset
+                if(data.serverTime) {
+                    serverTimeOffset = data.serverTime - Date.now();
+                }
+
                 if(data.user) {
                     if(data.user.isBanned) return location.reload();
                     currentBalance = data.user.balance || 0; keeperBalance = data.user.keeperBalance || 0;
@@ -1059,7 +1078,7 @@
             }
         }
         
-        function createTxnObj(type, title, amount, status, icon, color, name, number) { return { id: generateTxnId(), type, title, amount, status, date: formatDateTime(), timestamp: Date.now(), icon, color, name, number, senderName: currentUser.name, senderId: type==='out'?currentUser.phone:(number!=='N/A'?number:'SYSTEM'), receiverId: type==='in'?currentUser.phone:(number!=='N/A'?number:'SYSTEM') }; }
+        function createTxnObj(type, title, amount, status, icon, color, name, number) { return { id: generateTxnId(), type, title, amount: Number(amount), status, date: formatDateTime(), timestamp: Date.now(), icon, color, name, number, senderName: currentUser.name, senderId: type==='out'?currentUser.phone:(number!=='N/A'?number:'SYSTEM'), receiverId: type==='in'?currentUser.phone:(number!=='N/A'?number:'SYSTEM') }; }
 
         document.getElementById('send-num').addEventListener('input', async function() {
             let num = this.value.trim(); let nameField = document.getElementById('send-name');
@@ -1079,7 +1098,7 @@
                 await apiCall('EXECUTE_TXN', { mode: 'SEND', sender: currentUser.phone, receiver: num, amount: amt, txn });
                 sendTelegramMsg(currentUser.tgUserId, `💸 Payment Sent!\nTo: ${name}\nAmount: ₹${amt}`); if(receiver.tgUserId) sendTelegramMsg(receiver.tgUserId, `💰 Received ₹${amt} from ${currentUser.name}`);
                 document.getElementById('form-send').reset(); showToast("Sent Successfully!"); currentBalance -= amt; updateUI(); setTimeout(() => showView('home'), 800);
-            } catch(e) {}
+            } catch(e) { showToast("Sending failed"); }
         }
 
         async function processAdd() {
@@ -1111,7 +1130,7 @@
                 await apiCall('BULK_PAY', { sender: currentUser.phone, receivers: lines, amount: amt, date: formatDateTime() });
                 sendTelegramMsg(currentUser.tgUserId, `💸 Bulk Sent to ${lines.length} users. Total: ₹${totalAmt}`); showToast(`Sent to ${lines.length} users!`); currentBalance -= totalAmt; updateUI();
                 document.getElementById('bulk-nums').value = ''; document.getElementById('bulk-amt').value = ''; document.getElementById('bulk-pin').value = ''; setTimeout(() => showView('home'), 1200);
-            } catch(e) {}
+            } catch(e) { showToast("Bulk pay failed"); }
         }
 
         function processWithdraw() {
@@ -1153,7 +1172,7 @@
                 await apiCall('CREATE_GIFT', { phone: currentUser.phone, code, amount: amt, users, txn });
                 sendTelegramMsg(currentUser.tgUserId, `🎁 Gift Code Generated!\nAmount: ₹${total}\nCode: ${code}`); alert(`Gift Code Created: ${code}\nShare this with users!`);
                 currentBalance -= total; updateUI(); document.getElementById('gift-amt').value=''; document.getElementById('gift-users').value=''; document.getElementById('gift-pin').value=''; showView('home');
-            } catch(e) {}
+            } catch(e) { showToast("Failed to create code"); }
         }
 
         async function processGiftClaim() {
@@ -1163,7 +1182,7 @@
                 let reward = await apiCall('CLAIM_GIFT', { phone: currentUser.phone, code, txn });
                 sendTelegramMsg(currentUser.tgUserId, `🎉 Gift Claimed!\nAmount: ₹${reward}\nCode: ${code}`); document.getElementById('claim-code').value = '';
                 showToast(`Yay! You claimed ₹${reward}`); currentBalance += reward; updateUI(); setTimeout(() => showView('home'), 1500);
-            } catch(e) {}
+            } catch(e) { showToast(e.message || "Failed to claim gift"); }
         }
 
         async function processKeeperLock() {
@@ -1239,8 +1258,10 @@
             }
         }
 
+        // AUTO SYNC TIME LOGIC
         function updateGameSim() {
-            let now = Date.now(); 
+            // Adds server offset so all users see EXACT same global time regardless of their device clock
+            let now = Date.now() + serverTimeOffset; 
             let currentRoundEpoch = Math.floor(now / 40000); 
             let newRoundId = "R" + currentRoundEpoch; 
             let elapsedInRound = now % 40000;
