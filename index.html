@@ -801,7 +801,7 @@
         let isBetting = false; 
         
         // NEW: Global Sync offset logic
-        let serverTimeOffset = 0; 
+        let serverTimeOffset = null; 
 
         // SPAM PREVENTION
         let isActionOnCooldown = false;
@@ -881,20 +881,27 @@
         async function checkAuth() {
             let sessionPhone = localStorage.getItem('swiftSession');
             if (sessionPhone && sessionPhone !== 'null' && sessionPhone !== 'undefined') {
+                
+                // 1. INSTANT LOGIN - Fast UI Load (No waiting for slow internet)
+                currentUser = { phone: sessionPhone, name: "Loading..." };
+                document.getElementById('auth-wrapper').classList.add('hidden');
+                initApp();
+                
+                // 2. BACKGROUND VERIFY - (Retry if server times out, don't logout)
                 try {
                     let user = await apiCall('CHECK_USER', { phone: sessionPhone });
                     if (user && typeof user === 'object') {
                         currentUser = user; currentUser.phone = sessionPhone;
-                        if(currentUser.isBanned) { document.getElementById('banned-wrapper').classList.remove('hidden'); document.getElementById('banned-wrapper').style.display = 'flex'; return; }
+                        if(currentUser.isBanned) return location.reload();
                         if (!currentUser.apiKey) { currentUser.apiKey = generateApiKey(); await apiCall('GENERATE_API', { phone: currentUser.phone, newKey: currentUser.apiKey }); }
-                        document.getElementById('auth-wrapper').classList.add('hidden'); initApp();
+                        document.getElementById('ui-user-name').innerText = currentUser.name || "User"; 
+                        document.getElementById('ui-user-initial').innerText = (currentUser.name || "U").charAt(0).toUpperCase();
+                        updateApiKeyUI();
                     } else if (user === null) { 
                         logoutUser(); 
                     }
                 } catch(e) { 
-                    // Network timeout or cold start fix: Do not log out. Just retry.
-                    console.log("Retrying connection...");
-                    showToast("Connecting to server...");
+                    console.log("Retrying background auth...");
                     setTimeout(checkAuth, 3000); 
                 }
             } else { 
@@ -965,8 +972,8 @@
             try {
                 let data = await apiCall('SYNC', { phone: currentUser.phone, gameRoundId: currentGameRoundId });
                 
-                // Set Global Server Time Offset
-                if(data.serverTime) {
+                // Set Global Server Time Offset (Only once to prevent jumps)
+                if(data.serverTime && serverTimeOffset === null) {
                     serverTimeOffset = data.serverTime - Date.now();
                 }
 
@@ -1065,7 +1072,6 @@
             document.getElementById('sidebar-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SWIFTPAY:${currentUser.phone}:${encodeURIComponent(currentUser.name || "User")}`;
             updateApiKeyUI();
             
-            updateGameSim(); 
             syncData(); 
             setInterval(syncData, 3000); 
             setInterval(updateGameSim, 1000); 
@@ -1258,9 +1264,10 @@
             }
         }
 
-        // AUTO SYNC TIME LOGIC
+        // GLOBAL SYNC TIMER LOGIC
         function updateGameSim() {
-            // Adds server offset so all users see EXACT same global time regardless of their device clock
+            if (serverTimeOffset === null) return; // Wait until global time is fetched
+
             let now = Date.now() + serverTimeOffset; 
             let currentRoundEpoch = Math.floor(now / 40000); 
             let newRoundId = "R" + currentRoundEpoch; 
