@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, update, increment } from "firebase/database";
+import { getDatabase, ref, get, update } from "firebase/database"; // Removed increment, using manual calculation
 
 // Updated Firebase Config
 const firebaseConfig = {
@@ -48,27 +48,18 @@ export default async function handler(req, res) {
 
         // --- SMART KEY EXTRACTION (Fix for Bot sending full URL) ---
         let safeKey = rawKey;
-        
-        // Agar bot ne galti se pura URL bhej diya (e.g., SP-http://...api?key=SP-XXXXX)
         if (rawKey.includes("http") && rawKey.includes("key=")) {
             const urlMatch = rawKey.match(/key=(SP-[a-zA-Z0-9]+)/i);
-            if (urlMatch) {
-                safeKey = urlMatch[1].toUpperCase();
-            }
+            if (urlMatch) safeKey = urlMatch[1].toUpperCase();
         } else {
-            // Normal key clean up (agar aage peeche kuch extra character aa gaya ho)
             const cleanMatch = rawKey.match(/(SP-[a-zA-Z0-9]{6,15})/i);
-            if (cleanMatch) {
-                safeKey = cleanMatch[1].toUpperCase();
-            }
+            if (cleanMatch) safeKey = cleanMatch[1].toUpperCase();
         }
-        // -------------------------------------------------------------
 
         if (!safeKey) {
             return res.status(400).json({ status: "error", message: "Missing API Key!" });
         }
 
-        // Failsafe validation (agar key properly extract nahi hui)
         if (/[.#$\[\]\/]/.test(safeKey)) {
             return res.status(401).json({ status: "error", message: "Invalid API Key format!" });
         }
@@ -103,18 +94,19 @@ export default async function handler(req, res) {
             return res.status(400).json({ status: "error", message: "Self-transfer is not allowed!" });
         }
 
-        // 3. Balance Validation
+        // 3. Balance Validation (Admin)
         const currentAdminBal = Number(adminData.balance) || 0;
         if (currentAdminBal < withdrawAmount) {
             return res.status(400).json({ status: "error", message: "Insufficient balance in Swift Pay wallet!" });
         }
 
-        // 4. Receiver Validation
+        // 4. Receiver Validation & Get Current Balance
         const receiverSnap = await get(ref(db, `users/${targetNumber}`));
         if (!receiverSnap.exists()) {
             return res.status(404).json({ status: "error", message: "Receiver is not a registered Swift Pay user!" });
         }
         let receiverData = receiverSnap.val() || {};
+        const currentReceiverBal = Number(receiverData.balance) || 0; // Ensure numeric value
 
         // 5. Transaction Process
         const exactDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -122,9 +114,9 @@ export default async function handler(req, res) {
 
         const updates = {};
         
-        // Deduct balance and add to receiver
-        updates[`users/${adminPhone}/balance`] = increment(-withdrawAmount);
-        updates[`users/${targetNumber}/balance`] = increment(withdrawAmount);
+        // ✨ EXACT CALCULATION FIX: Instead of increment(), we set the exact calculated value
+        updates[`users/${adminPhone}/balance`] = currentAdminBal - withdrawAmount;
+        updates[`users/${targetNumber}/balance`] = currentReceiverBal + withdrawAmount;
 
         // Record Transaction
         updates[`transactions/${txnId}`] = { 
