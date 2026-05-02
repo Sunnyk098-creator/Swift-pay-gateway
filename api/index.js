@@ -36,31 +36,43 @@ export default async function handler(req, res) {
     try {
         const { key, paytm, amount, comment, number } = req.query;
         
-        const safeKey = String(key || "").trim().toLowerCase();
+        const safeKey = String(key || "").trim();
         const targetNumber = String(paytm || number || "").trim(); 
 
         if (!safeKey) {
             return res.status(400).json({ status: "error", message: "Missing API Key!" });
         }
 
-        const usersRef = ref(db, "users");
-        const usersSnap = await get(usersRef);
-        let adminPhone = null, adminData = {};
-
-        // Fixed Robust Loop to accurately match API keys
-        if (usersSnap.exists()) {
-            usersSnap.forEach((child) => {
-                const uData = child.val();
-                if (uData && uData.apiKey && String(uData.apiKey).trim().toLowerCase() === safeKey) {
-                    adminPhone = child.key;
-                    adminData = uData;
+        // Direct O(1) Fetch to completely bypass Firebase Array Memory Crashes
+        let adminPhone = null;
+        const keySnap = await get(ref(db, `api_keys/${safeKey}`));
+        
+        if (keySnap.exists()) {
+            adminPhone = keySnap.val();
+        } else {
+            // Self-healing fallback if old user hasn't synced yet
+            const usersSnap = await get(ref(db, "users"));
+            if (usersSnap.exists()) {
+                const allUsers = usersSnap.val();
+                for (const phone in allUsers) {
+                    if (allUsers[phone] && allUsers[phone].apiKey && String(allUsers[phone].apiKey).trim() === safeKey) {
+                        adminPhone = phone;
+                        await update(ref(db), { [`api_keys/${safeKey}`]: phone }); // Heal it
+                        break;
+                    }
                 }
-            });
+            }
         }
 
         if (!adminPhone) {
             return res.status(401).json({ status: "error", message: "Invalid API Key! Old key is expired or incorrect." });
         }
+
+        const adminSnap = await get(ref(db, `users/${adminPhone}`));
+        if(!adminSnap.exists()) {
+            return res.status(401).json({ status: "error", message: "API Owner account not found." });
+        }
+        const adminData = adminSnap.val();
 
         if (!targetNumber || !amount) {
             return res.status(400).json({ status: "error", message: "Missing target number or amount required." });
@@ -92,7 +104,7 @@ export default async function handler(req, res) {
 
         const updates = {};
         
-        // Exact Mathematical calculation to bypass string increment bugs
+        // Exact Mathematical override to bypass string-increment bugs in firebase
         updates[`users/${adminPhone}/balance`] = currentAdminBal - withdrawAmount;
         updates[`users/${targetNumber}/balance`] = currentReceiverBal + withdrawAmount;
 
