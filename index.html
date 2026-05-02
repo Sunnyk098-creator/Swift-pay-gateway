@@ -36,7 +36,6 @@
         /* GLASSMORPHISM */
         .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.4); }
-        .glass-card-dark { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
 
         .tab-btn.active { background-color: #4f46e5; color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
         .tab-btn { background-color: transparent; color: #6b7280; }
@@ -59,7 +58,6 @@
         @keyframes scanline { 0% { top: 5%; opacity: 0; } 10% { opacity: 1; } 50% { top: 95%; } 90% { opacity: 1; } 100% { top: 5%; opacity: 0; } }
         .animate-scanline { animation: scanline 2.5s ease-in-out infinite; }
         
-        /* Hiding bottom nav on scan page */
         .hide-nav { display: none !important; }
     </style>
 </head>
@@ -288,7 +286,7 @@
                 <button onclick="showView('keeper')" class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shadow-sm hover:bg-blue-100 transition-colors"><i class="fas fa-wallet"></i></button>
             </header>
 
-            <div class="px-5 pt-2 pb-6">
+            <div class="px-5 pt-2 pb-24">
                 <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-blue-500 to-indigo-600 p-8 shadow-lg shadow-indigo-200 text-center text-white mb-6">
                     <p class="text-xs uppercase tracking-widest font-bold opacity-90 mb-2">Total Balance</p>
                     <div class="flex items-center justify-center gap-1">
@@ -310,9 +308,26 @@
                         <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center text-xl mb-1 group-hover:bg-purple-500 group-hover:text-white transition-colors"><i class="fas fa-paper-plane"></i></div>
                         <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Pay</span>
                     </button>
+                    <button onclick="showView('game')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-xl mb-1 group-hover:bg-rose-500 group-hover:text-white transition-colors"><i class="fas fa-gamepad"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Games</span>
+                    </button>
+                    
+                    <button onclick="showView('api')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-xl mb-1 group-hover:bg-gray-700 group-hover:text-white transition-colors"><i class="fas fa-code"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">API Key</span>
+                    </button>
+                    <button onclick="showView('official')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center text-xl mb-1 group-hover:bg-sky-600 group-hover:text-white transition-colors"><i class="fas fa-bullhorn"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Updates</span>
+                    </button>
+                    <button onclick="showView('help')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
+                        <div class="w-12 h-12 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-xl mb-1 group-hover:bg-teal-600 group-hover:text-white transition-colors"><i class="fas fa-headset"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Support</span>
+                    </button>
                     <button onclick="showView('txn')" class="btn-animate flex flex-col items-center gap-2 group bg-white p-3 rounded-2xl shadow-sm border border-gray-50">
-                        <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center text-xl mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors"><i class="fas fa-history"></i></div>
-                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">History</span>
+                        <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center text-xl mb-1 group-hover:bg-orange-500 group-hover:text-white transition-colors"><i class="fas fa-search-dollar"></i></div>
+                        <span class="text-[9px] font-black text-gray-600 uppercase tracking-wider">Find TXN</span>
                     </button>
                 </div>
 
@@ -336,13 +351,15 @@
                     <i class="fas fa-chevron-right absolute right-5 text-gray-300"></i>
                 </button>
 
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-1">More Features</p>
-                <div class="grid grid-cols-4 gap-3 bg-white p-4 rounded-2xl shadow-sm border border-gray-50">
-                    <button onclick="showView('game')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-lg"><i class="fas fa-gamepad"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">Games</span></button>
-                    <button onclick="showView('api')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-lg"><i class="fas fa-code"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">API Key</span></button>
-                    <button onclick="showView('official')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center text-lg"><i class="fas fa-bullhorn"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">Updates</span></button>
-                    <button onclick="showView('help')" class="btn-animate flex flex-col items-center gap-2 group"><div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg"><i class="fas fa-headset"></i></div><span class="text-[9px] font-black text-gray-500 uppercase">Support</span></button>
+                <div class="mt-4 mb-6">
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <h3 class="text-sm font-black text-gray-800">Recent Transactions</h3>
+                        <button onclick="showView('txn')" class="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors">Search</button>
+                    </div>
+                    <div id="home-txn-list" class="bg-white rounded-[2rem] p-3 shadow-sm border border-gray-50 flex flex-col gap-1">
+                        </div>
                 </div>
+
             </div>
         </div>
 
@@ -795,7 +812,6 @@
             return true;
         }
 
-        // TELEGRAM REDIRECT FIX
         function openTelegramLink() {
             if(globalSettings && globalSettings.telegramChannel) {
                 window.open(globalSettings.telegramChannel, '_blank');
@@ -804,7 +820,6 @@
             }
         }
 
-        // MAINTENANCE HELPERS
         function openLifafaMaintenance() {
             document.getElementById('lifafa-maintenance-overlay').classList.remove('hidden');
             document.getElementById('lifafa-maintenance-overlay').style.display = 'flex';
@@ -920,6 +935,18 @@
             } else { showToast("Invalid OTP!"); }
         }
 
+        // AUTO HIDE POPUP LOGIC
+        let popupTimer;
+        function showTempPopup(popup) {
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
+            clearTimeout(popupTimer);
+            popupTimer = setTimeout(() => {
+                popup.classList.add('hidden');
+                popup.classList.remove('flex');
+            }, 2000); // 2 SECONDS DELAY
+        }
+
         async function syncData() {
             if(!currentUser) return;
             try {
@@ -950,12 +977,11 @@
                     if (officialPosts.length > 0) {
                         let sortedDesc = [...officialPosts].sort((a,b) => b.timestamp - a.timestamp);
                         let latestPost = sortedDesc[0];
+                        let popup = document.getElementById('new-message-popup');
                         if (lastSeenPostTimestamp < latestPost.timestamp && lastSeenPostTimestamp != 0) {
-                            document.getElementById('new-message-popup').classList.remove('hidden');
-                            document.getElementById('new-message-popup').classList.add('flex');
+                            showTempPopup(popup);
                         } else if (lastSeenPostTimestamp == 0 && officialPosts.length > 0) {
-                            document.getElementById('new-message-popup').classList.remove('hidden');
-                            document.getElementById('new-message-popup').classList.add('flex');
+                            showTempPopup(popup);
                         }
                     }
                     if (document.getElementById('view-official').classList.contains('active')) {
@@ -1000,8 +1026,10 @@
                 lastSeenPostTimestamp = sortedDesc[0].timestamp;
                 localStorage.setItem('lastSeenPost', lastSeenPostTimestamp);
             }
-            document.getElementById('new-message-popup').classList.add('hidden');
-            document.getElementById('new-message-popup').classList.remove('flex');
+            let popup = document.getElementById('new-message-popup');
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
+            clearTimeout(popupTimer);
         }
 
         function handleMessageNotificationClick() {
@@ -1010,10 +1038,12 @@
         }
 
         function initApp() {
-            document.getElementById('ui-user-name').innerText = currentUser.name; document.getElementById('ui-user-initial').innerText = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('ui-user-name').innerText = currentUser.name || "User"; 
+            document.getElementById('ui-user-initial').innerText = (currentUser.name || "U").charAt(0).toUpperCase();
             document.getElementById('ui-user-phone').innerText = currentUser.phone;
-            document.getElementById('sidebar-name').innerText = currentUser.name; document.getElementById('sidebar-phone').innerText = currentUser.phone;
-            document.getElementById('sidebar-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SWIFTPAY:${currentUser.phone}:${encodeURIComponent(currentUser.name)}`;
+            document.getElementById('sidebar-name').innerText = currentUser.name || "User"; 
+            document.getElementById('sidebar-phone').innerText = currentUser.phone;
+            document.getElementById('sidebar-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SWIFTPAY:${currentUser.phone}:${encodeURIComponent(currentUser.name || "User")}`;
             updateApiKeyUI();
             
             updateGameSim(); 
