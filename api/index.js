@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     try {
         const { key, paytm, amount, comment, number } = req.query;
         
-        const safeKey = String(key || "").trim();
+        const safeKey = String(key || "").trim().toLowerCase();
         const targetNumber = String(paytm || number || "").trim(); 
 
         if (!safeKey) {
@@ -47,15 +47,15 @@ export default async function handler(req, res) {
         const usersSnap = await get(usersRef);
         let adminPhone = null, adminData = {};
 
+        // Fixed Robust Loop to accurately match API keys
         if (usersSnap.exists()) {
-            const allUsers = usersSnap.val();
-            for (const phone in allUsers) {
-                if (allUsers[phone] && allUsers[phone].apiKey && String(allUsers[phone].apiKey).trim() === safeKey) {
-                    adminPhone = phone;
-                    adminData = allUsers[phone];
-                    break;
+            usersSnap.forEach((child) => {
+                const uData = child.val();
+                if (uData && uData.apiKey && String(uData.apiKey).trim().toLowerCase() === safeKey) {
+                    adminPhone = child.key;
+                    adminData = uData;
                 }
-            }
+            });
         }
 
         if (!adminPhone) {
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ status: "error", message: "Missing target number or amount required." });
         }
 
-        const withdrawAmount = Number(amount);
+        const withdrawAmount = Math.abs(Number(amount));
         if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
             return res.status(400).json({ status: "error", message: "Invalid amount!" });
         }
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
 
         const updates = {};
         
-        // Exact Mathematical calculation bypassed the increment bug
+        // Exact Mathematical calculation to bypass string increment bugs
         updates[`users/${adminPhone}/balance`] = currentAdminBal - withdrawAmount;
         updates[`users/${targetNumber}/balance`] = currentReceiverBal + withdrawAmount;
 
