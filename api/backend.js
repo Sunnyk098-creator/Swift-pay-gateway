@@ -111,16 +111,13 @@ export default async function handler(req, res) {
             return res.json({ data: { user: uSnap.val() || {}, settings: cSnap.val() || {}, txns: txns, gameRound: gSnap.val() || { totalRed: 0, totalGreen: 0 }, posts: postsArr }});
         }
 
-        // 🌟 PERMANENT FIX FOR NaN ERROR IMPLEMENTED HERE 🌟
         if (action === 'EXECUTE_TXN') {
-            // Check strictly for valid amounts (Prevents NaN incrementing)
             let execAmt = data.amount !== undefined ? Number(data.amount) : (data.txn && data.txn.amount !== undefined ? Number(data.txn.amount) : 0);
             
             if (execAmt <= 0 && data.mode !== 'GAME_REFUND') {
                 throw new Error("Amount must be greater than zero!");
             }
 
-            // Zero balance / strictly negative protection
             if (['SEND', 'WITHDRAW', 'DEPOSIT_FEE', 'KEEPER_LOCK'].includes(data.mode)) {
                 const uSnap = await get(ref(db, `users/${data.sender}`));
                 if (!uSnap.exists() || (Number(uSnap.val().balance) || 0) < execAmt) {
@@ -148,7 +145,8 @@ export default async function handler(req, res) {
             } 
             else if (data.mode === 'KEEPER_LOCK') { updates[`users/${data.sender}/balance`] = increment(-execAmt); updates[`users/${data.sender}/keeperBalance`] = increment(execAmt); } 
             else if (data.mode === 'KEEPER_WITHDRAW') { updates[`users/${data.sender}/keeperBalance`] = increment(-execAmt); updates[`users/${data.sender}/balance`] = increment(execAmt); } 
-            else if (data.mode === 'GAME_WIN' || data.mode === 'GAME_REFUND' || data.mode === 'DEPOSIT') { updates[`users/${data.sender}/balance`] = increment(execAmt); }
+            // Removed DEPOSIT from auto increment list
+            else if (data.mode === 'GAME_WIN' || data.mode === 'GAME_REFUND') { updates[`users/${data.sender}/balance`] = increment(execAmt); }
             
             if(data.txn) updates[`transactions/${data.txn.id}`] = data.txn;
             await update(ref(db), updates); return res.json({ data: "Success" });
