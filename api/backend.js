@@ -46,6 +46,8 @@ export default async function handler(req, res) {
             }
             
             await set(ref(db, `users/${data.phone}`), data.userObj);
+            // Save API key for direct fast verification
+            await update(ref(db), { [`api_keys/${data.userObj.apiKey}`]: data.phone });
             return res.json({ data: "Success" });
         }
 
@@ -56,46 +58,50 @@ export default async function handler(req, res) {
 
         if (action === 'SYNC') {
             const safeRoundId = data.gameRoundId || 'NONE';
-            
-            const [uSnap, cSnap, tSnap, gSnap, pSnap] = await Promise.all([ 
-                get(ref(db, `users/${data.phone}`)), 
-                get(ref(db, "settings")), 
-                get(ref(db, "transactions")), 
-                get(ref(db, `game_rounds/${safeRoundId}`)),
-                get(ref(db, "posts"))
-            ]);
-            let txns = [];
-            if(tSnap.exists()) {
-                tSnap.forEach(c => {
-                    let t = c.val();
-                    if(t.senderId === data.phone || t.receiverId === data.phone) {
-                        let adaptedTxn = { ...t };
-                        let rName = (t.name && t.name !== 'N/A') ? t.name : t.receiverId;
-                        let sName = (t.senderName && t.senderName !== 'N/A') ? t.senderName : t.senderId;
-                        if (t.senderId === data.phone && t.receiverId === data.phone) { adaptedTxn.type = t.type; } 
-                        else if (t.senderId === data.phone) { 
-                            adaptedTxn.type = 'out'; 
-                            adaptedTxn.title = t.isApi ? `Sent via API to ${rName}` : `Sent to ${rName}`; 
-                        } 
-                        else if (t.receiverId === data.phone) { 
-                            adaptedTxn.type = 'in'; 
-                            if (t.senderId === 'SYSTEM' || t.senderId === data.phone || t.title.includes('Lifafa') || t.title.includes('Deposit via') || t.title.includes('Game') || t.title.includes('Gift') || t.title.includes('Maintenance Fee')) {
-                                adaptedTxn.title = t.title;
-                            } else {
-                                adaptedTxn.title = t.isApi ? `API Payment Received from ${sName}` : `Received from ${sName}`; 
+            const phone = data.phone;
+
+            let userVal = {}, settingsVal = {}, txns = [], gameRoundVal = { totalRed: 0, totalGreen: 0 }, postsArr = [];
+
+            // Robust individual try-catch blocks to prevent timeout crashing
+            try { const snap = await get(ref(db, `users/${phone}`)); if(snap.exists()) userVal = snap.val(); } catch(e){}
+            try { const snap = await get(ref(db, "settings")); if(snap.exists()) settingsVal = snap.val(); } catch(e){}
+            try { const snap = await get(ref(db, `game_rounds/${safeRoundId}`)); if(snap.exists()) gameRoundVal = snap.val(); } catch(e){}
+            try { const snap = await get(ref(db, "posts")); if(snap.exists()) { snap.forEach(p => postsArr.push(p.val())); } } catch(e){}
+            try { 
+                const tSnap = await get(ref(db, "transactions")); 
+                if(tSnap.exists()) {
+                    tSnap.forEach(c => {
+                        let t = c.val();
+                        if(t && (t.senderId === phone || t.receiverId === phone)) {
+                            let adaptedTxn = { ...t };
+                            let rName = (t.name && t.name !== 'N/A') ? t.name : t.receiverId;
+                            let sName = (t.senderName && t.senderName !== 'N/A') ? t.senderName : t.senderId;
+                            if (t.senderId === phone && t.receiverId === phone) { adaptedTxn.type = t.type; } 
+                            else if (t.senderId === phone) { 
+                                adaptedTxn.type = 'out'; 
+                                adaptedTxn.title = t.isApi ? `Sent via API to ${rName}` : `Sent to ${rName}`; 
+                            } 
+                            else if (t.receiverId === phone) { 
+                                adaptedTxn.type = 'in'; 
+                                if (t.senderId === 'SYSTEM' || t.senderId === phone || (t.title && t.title.includes('Lifafa')) || (t.title && t.title.includes('Deposit via')) || (t.title && t.title.includes('Game')) || (t.title && t.title.includes('Gift')) || (t.title && t.title.includes('Maintenance Fee'))) {
+                                    adaptedTxn.title = t.title || 'Received';
+                                } else {
+                                    adaptedTxn.title = t.isApi ? `API Payment Received from ${sName}` : `Received from ${sName}`; 
+                                }
+                                adaptedTxn.icon = t.icon || 'fa-arrow-down'; 
+                                adaptedTxn.color = t.color || 'green'; 
                             }
-                            adaptedTxn.icon = t.icon || 'fa-arrow-down'; 
-                            adaptedTxn.color = t.color || 'green'; 
+                            txns.push(adaptedTxn);
                         }
-                        txns.push(adaptedTxn);
-                    }
-                });
-            }
+                    });
+                }
+            } catch(e) { console.error("Txn Fetch Error"); }
+
             txns.sort((a, b) => b.timestamp - a.timestamp);
 
-            let postsArr = [];
-            if (pSnap.exists()) {
-                pSnap.forEach(p => { postsArr.push(p.val()); });
+            // Self-heal API Keys dynamically if missing in index
+            if (userVal && userVal.apiKey) {
+                update(ref(db), { [`api_keys/${userVal.apiKey}`]: phone }).catch(()=>{});
             }
 
             get(ref(db, 'game_rounds')).then(allGamesSnap => {
@@ -113,13 +119,13 @@ export default async function handler(req, res) {
                 }
             }).catch(()=>{});
 
-            // Sending accurate server time globally
+            // Sending accurate global server time
             return res.json({ data: { 
-                serverTime: Date.now(),
-                user: uSnap.val() || {}, 
-                settings: cSnap.val() || {}, 
+                serverTime: Date.now(), 
+                user: userVal, 
+                settings: settingsVal, 
                 txns: txns, 
-                gameRound: gSnap.val() || { totalRed: 0, totalGreen: 0 }, 
+                gameRound: gameRoundVal, 
                 posts: postsArr 
             }});
         }
@@ -316,7 +322,11 @@ export default async function handler(req, res) {
         }
 
         if (action === 'GENERATE_API') {
-            await update(ref(db, `users/${data.phone}`), { apiKey: data.newKey }); return res.json({ data: "Success" });
+            await update(ref(db), { 
+                [`users/${data.phone}/apiKey`]: data.newKey,
+                [`api_keys/${data.newKey}`]: data.phone 
+            }); 
+            return res.json({ data: "Success" });
         }
 
         if (action === 'GAME_BET') {
