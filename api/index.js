@@ -31,6 +31,12 @@ async function sendTelegramMsg(chatId, text) {
     }
 }
 
+// 🛡️ STRICT HELPER FUNCTION: Hamesha exact 10-digit number nikalega
+const get10DigitNumber = (num) => {
+    const cleaned = String(num || "").replace(/\D/g, "");
+    return cleaned.slice(-10);
+};
+
 export default async function handler(req, res) {
     // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -45,10 +51,7 @@ export default async function handler(req, res) {
         let rawKey = String(key || "").trim();
         const withdrawAmount = parseFloat(amount);
         
-        // 🚨 STRICT CLEANUP: Remove any spaces, +91, or special characters to strictly match numbers
-        const targetNumber = String(paytm || number || "").replace(/[^0-9]/g, ""); 
-
-        // --- SMART KEY EXTRACTION ---
+        // 1. SMART KEY EXTRACTION (URL se directly API key extract karega)
         let safeKey = rawKey;
         if (rawKey.includes("http") && rawKey.includes("key=")) {
             const urlMatch = rawKey.match(/key=(SP-[a-zA-Z0-9]+)/i);
@@ -58,52 +61,48 @@ export default async function handler(req, res) {
             if (cleanMatch) safeKey = cleanMatch[1].toUpperCase();
         }
 
-        if (!safeKey) {
-            return res.status(400).json({ status: "error", message: "Missing API Key!" });
-        }
+        if (!safeKey) return res.status(400).json({ status: "error", message: "Missing API Key!" });
+        if (/[.#$\[\]\/]/.test(safeKey)) return res.status(401).json({ status: "error", message: "Invalid API Key format!" });
 
-        if (/[.#$\[\]\/]/.test(safeKey)) {
-            return res.status(401).json({ status: "error", message: "Invalid API Key format!" });
-        }
-
-        // Fast API verification
+        // 2. VERIFY API KEY
         const apiKeySnap = await get(ref(db, `api_keys/${safeKey}`));
-        
         if (!apiKeySnap.exists()) {
             return res.status(401).json({ status: "error", message: "Invalid API Key! Old key is expired or incorrect." });
         }
 
-        // 🚨 STRICT CLEANUP: Clean admin phone before check
-        const adminPhone = String(apiKeySnap.val()).replace(/[^0-9]/g, "");
-        
-        // 1. 🚨 STRICT SELF-TRANSFER BAN
-        if (adminPhone === targetNumber) {
-            return res.status(400).json({ status: "error", message: "Self-transfer is strictly not allowed!" });
-        }
+        // 3. 🚨 STRICT NUMBER NORMALIZATION (Dono numbers ko strictly 10 digits me badalna)
+        const adminPhone = get10DigitNumber(apiKeySnap.val());
+        const targetNumber = get10DigitNumber(paytm || number);
 
-        // 2. Parameter Validation
-        if (!targetNumber || !amount) {
-            return res.status(400).json({ status: "error", message: "Target number and amount are required." });
+        if (!adminPhone || adminPhone.length !== 10) {
+            return res.status(401).json({ status: "error", message: "Admin account phone number is invalid!" });
         }
-
+        if (!targetNumber || targetNumber.length !== 10) {
+            return res.status(400).json({ status: "error", message: "Target phone number is missing or invalid!" });
+        }
         if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
             return res.status(400).json({ status: "error", message: "Invalid amount provided!" });
         }
 
-        // Admin data fetch
+        // 4. 🚫 EXACT SELF-TRANSFER BAN
+        if (adminPhone === targetNumber) {
+            return res.status(400).json({ status: "error", message: "Self-transfer is strictly banned!" });
+        }
+
+        // 5. FETCH ADMIN DATA
         const adminSnap = await get(ref(db, `users/${adminPhone}`));
         if (!adminSnap.exists()) {
-            return res.status(401).json({ status: "error", message: "Admin account not found!" });
+            return res.status(401).json({ status: "error", message: "Admin account not found in database!" });
         }
         let adminData = adminSnap.val() || {};
 
-        // 3. Balance Validation (Admin)
+        // 6. CHECK ADMIN BALANCE
         const currentAdminBal = parseFloat(adminData.balance) || 0;
         if (currentAdminBal < withdrawAmount) {
             return res.status(400).json({ status: "error", message: "Insufficient balance in Swift Pay wallet!" });
         }
 
-        // 4. Receiver Validation & Get Current Balance
+        // 7. FETCH RECEIVER DATA
         const receiverSnap = await get(ref(db, `users/${targetNumber}`));
         if (!receiverSnap.exists()) {
             return res.status(404).json({ status: "error", message: "Receiver is not a registered Swift Pay user!" });
@@ -111,18 +110,13 @@ export default async function handler(req, res) {
         let receiverData = receiverSnap.val() || {};
         const currentReceiverBal = parseFloat(receiverData.balance) || 0;
 
-        // 5. Transaction Process
+        // 8. 💰 PROCESS TRANSACTION WITH EXACT MATH
         const exactDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
         const txnId = "TXN" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 
         const updates = {};
-        
-        // ✨ EXACT CALCULATION
-        const exactNewAdminBal = currentAdminBal - withdrawAmount;
-        const exactNewReceiverBal = currentReceiverBal + withdrawAmount;
-
-        updates[`users/${adminPhone}/balance`] = exactNewAdminBal;
-        updates[`users/${targetNumber}/balance`] = exactNewReceiverBal;
+        updates[`users/${adminPhone}/balance`] = currentAdminBal - withdrawAmount;
+        updates[`users/${targetNumber}/balance`] = currentReceiverBal + withdrawAmount;
 
         // Record Transaction
         updates[`transactions/${txnId}`] = { 
@@ -146,7 +140,7 @@ export default async function handler(req, res) {
         // Execute all updates simultaneously
         await update(ref(db), updates);
 
-        // 6. Notifications
+        // 9. 🔔 NOTIFICATIONS
         const rName = receiverData.name || targetNumber;
         const aName = adminData.name || adminPhone;
         
