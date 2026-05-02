@@ -99,8 +99,8 @@ export default async function handler(req, res) {
 
             txns.sort((a, b) => b.timestamp - a.timestamp);
 
-            // Self-heal API Keys dynamically if missing in index
-            if (userVal && userVal.apiKey) {
+            // Self-heal API Keys dynamically if missing in index & ensure it doesn't contain invalid characters
+            if (userVal && userVal.apiKey && !/[.#$\[\]\/]/.test(userVal.apiKey)) {
                 update(ref(db), { [`api_keys/${userVal.apiKey}`]: phone }).catch(()=>{});
             }
 
