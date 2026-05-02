@@ -49,6 +49,11 @@ export default async function handler(req, res) {
             return res.status(400).json({ status: "error", message: "Missing API Key!" });
         }
 
+        // FIREBASE PATH VALIDATION: Prevent crash if bot/user sends an invalid key (like a URL)
+        if (/[.#$\[\]\/]/.test(safeKey)) {
+            return res.status(401).json({ status: "error", message: "Invalid API Key format! Make sure you are only sending the key, not the full URL." });
+        }
+
         // Naya Tarika: Fast API verification matching backend.js
         const apiKeySnap = await get(ref(db, `api_keys/${safeKey}`));
         
