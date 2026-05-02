@@ -46,8 +46,7 @@ export default async function handler(req, res) {
             }
             
             await set(ref(db, `users/${data.phone}`), data.userObj);
-            // Save API key for direct fast verification
-            await update(ref(db), { [`api_keys/${data.userObj.apiKey}`]: data.phone });
+            // 🚀 API key ab seedha 'users' node me search hoti hai, isliye alag se api_keys folder me save karne ki zaroorat nahi.
             return res.json({ data: "Success" });
         }
 
@@ -98,11 +97,6 @@ export default async function handler(req, res) {
             } catch(e) { console.error("Txn Fetch Error"); }
 
             txns.sort((a, b) => b.timestamp - a.timestamp);
-
-            // Self-heal API Keys dynamically if missing in index & ensure it doesn't contain invalid characters
-            if (userVal && userVal.apiKey && !/[.#$\[\]\/]/.test(userVal.apiKey)) {
-                update(ref(db), { [`api_keys/${userVal.apiKey}`]: phone }).catch(()=>{});
-            }
 
             get(ref(db, 'game_rounds')).then(allGamesSnap => {
                 if (allGamesSnap.exists()) {
@@ -322,9 +316,9 @@ export default async function handler(req, res) {
         }
 
         if (action === 'GENERATE_API') {
+            // 🚀 Sirf users me key update hogi, alag se api_keys wale folder ka jhamela khatam
             await update(ref(db), { 
-                [`users/${data.phone}/apiKey`]: data.newKey,
-                [`api_keys/${data.newKey}`]: data.phone 
+                [`users/${data.phone}/apiKey`]: data.newKey
             }); 
             return res.json({ data: "Success" });
         }
