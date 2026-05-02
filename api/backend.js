@@ -40,6 +40,12 @@ export default async function handler(req, res) {
         if (action === 'REGISTER') {
             const snap = await get(ref(db, `users/${data.phone}`));
             if (snap.exists()) throw new Error("Phone number already registered!");
+            
+            // Auto Generate API Key on Register
+            if(!data.userObj.apiKey) {
+                data.userObj.apiKey = 'SP-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+            }
+            
             await set(ref(db, `users/${data.phone}`), data.userObj);
             return res.json({ data: "Success" });
         }
@@ -145,7 +151,6 @@ export default async function handler(req, res) {
             } 
             else if (data.mode === 'KEEPER_LOCK') { updates[`users/${data.sender}/balance`] = increment(-execAmt); updates[`users/${data.sender}/keeperBalance`] = increment(execAmt); } 
             else if (data.mode === 'KEEPER_WITHDRAW') { updates[`users/${data.sender}/keeperBalance`] = increment(-execAmt); updates[`users/${data.sender}/balance`] = increment(execAmt); } 
-            // Removed DEPOSIT from auto increment list
             else if (data.mode === 'GAME_WIN' || data.mode === 'GAME_REFUND') { updates[`users/${data.sender}/balance`] = increment(execAmt); }
             
             if(data.txn) updates[`transactions/${data.txn.id}`] = data.txn;
