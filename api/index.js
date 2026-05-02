@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, query, orderByChild, equalTo, update, increment } from "firebase/database";
+import { getDatabase, ref, get, update, increment } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCvzeg8_7ym5QYcDcfKbtC09JM0GkCVDn8",
@@ -14,7 +14,6 @@ const db = getDatabase(app);
 
 const BOT_TOKEN = "8440520277:AAG-DcrzOHZ2jFtvMofUdgxK2ATPFvdwkwM";
 
-// Fast async without awaiting it entirely to prevent late response
 async function sendTelegramMsg(chatId, text) {
     try {
         if (!chatId) return false;
@@ -45,54 +44,53 @@ export default async function handler(req, res) {
         }
 
         const usersRef = ref(db, "users");
-        const adminSnap = await get(query(usersRef, orderByChild("apiKey"), equalTo(safeKey)));
-        
-        if (!adminSnap.exists()) {
+        const usersSnap = await get(usersRef);
+        let adminPhone = null, adminData = {};
+
+        // Loop method to bypass Firebase Indexing error
+        if (usersSnap.exists()) {
+            usersSnap.forEach((child) => {
+                const userData = child.val();
+                if (userData && userData.apiKey === safeKey) {
+                    adminPhone = child.key;
+                    adminData = userData;
+                }
+            });
+        }
+
+        if (!adminPhone) {
             return res.status(401).json({ status: "error", message: "Invalid API Key! Old key is expired or incorrect." });
         }
 
-        let adminPhone = null, adminData = {};
-        adminSnap.forEach((child) => { 
-            adminPhone = child.key; 
-            adminData = child.val() || {}; 
-        });
-
-        // 1. Check Missing Parameters
         if (!targetNumber || !amount) {
             return res.status(400).json({ status: "error", message: "Missing target number or amount required." });
         }
 
-        // 2. Check Invalid Amount
         const withdrawAmount = Number(amount);
         if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
             return res.status(400).json({ status: "error", message: "Invalid amount!" });
         }
 
-        // 3. Check Self Transfer
         if (String(adminPhone) === targetNumber) {
             return res.status(400).json({ status: "error", message: "API Owner cannot send payment to their own number (Self-transfer not allowed)!" });
         }
 
-        // 4. Strict Balance Check
         const currentAdminBal = Number(adminData.balance) || 0;
         if (currentAdminBal < withdrawAmount) {
             return res.status(400).json({ status: "error", message: "Insufficient Balance in API Owner's wallet!" });
         }
 
-        // 5. Check if Receiver Exists
         const receiverSnap = await get(ref(db, "users/" + targetNumber));
         if (!receiverSnap.exists()) {
             return res.status(404).json({ status: "error", message: "Receiver mobile number is not registered in wallet!" });
         }
         let receiverData = receiverSnap.val() || {};
 
-        // SUCCESSFUL PAYMENT PROCESS START
         const exactDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
         const txnId = "TXN" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 
         const updates = {};
         
-        // Deduct from Sender & Add to Receiver
         updates[`users/${adminPhone}/balance`] = increment(-withdrawAmount);
         updates[`users/${targetNumber}/balance`] = increment(withdrawAmount);
 
@@ -114,7 +112,6 @@ export default async function handler(req, res) {
             isApi: true
         };
 
-        // Execute all updates simultaneously
         await update(ref(db), updates);
 
         let rName = receiverData.name || targetNumber;
