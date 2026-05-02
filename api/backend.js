@@ -41,7 +41,6 @@ export default async function handler(req, res) {
             const snap = await get(ref(db, `users/${data.phone}`));
             if (snap.exists()) throw new Error("Phone number already registered!");
             
-            // Auto Generate API Key on Register
             if(!data.userObj.apiKey) {
                 data.userObj.apiKey = 'SP-' + Math.random().toString(36).substring(2, 10).toUpperCase();
             }
@@ -114,7 +113,15 @@ export default async function handler(req, res) {
                 }
             }).catch(()=>{});
 
-            return res.json({ data: { user: uSnap.val() || {}, settings: cSnap.val() || {}, txns: txns, gameRound: gSnap.val() || { totalRed: 0, totalGreen: 0 }, posts: postsArr }});
+            // Sending serverTime for global timer synchronization
+            return res.json({ data: { 
+                serverTime: Date.now(), 
+                user: uSnap.val() || {}, 
+                settings: cSnap.val() || {}, 
+                txns: txns, 
+                gameRound: gSnap.val() || { totalRed: 0, totalGreen: 0 }, 
+                posts: postsArr 
+            }});
         }
 
         if (action === 'EXECUTE_TXN') {
