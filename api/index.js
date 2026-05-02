@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, update, increment } from "firebase/database";
+import { getDatabase, ref, get, update } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCvzeg8_7ym5QYcDcfKbtC09JM0GkCVDn8",
@@ -47,15 +47,15 @@ export default async function handler(req, res) {
         const usersSnap = await get(usersRef);
         let adminPhone = null, adminData = {};
 
-        // Loop method to bypass Firebase Indexing error
         if (usersSnap.exists()) {
-            usersSnap.forEach((child) => {
-                const userData = child.val();
-                if (userData && userData.apiKey === safeKey) {
-                    adminPhone = child.key;
-                    adminData = userData;
+            const allUsers = usersSnap.val();
+            for (const phone in allUsers) {
+                if (allUsers[phone] && allUsers[phone].apiKey && String(allUsers[phone].apiKey).trim() === safeKey) {
+                    adminPhone = phone;
+                    adminData = allUsers[phone];
+                    break;
                 }
-            });
+            }
         }
 
         if (!adminPhone) {
@@ -85,14 +85,16 @@ export default async function handler(req, res) {
             return res.status(404).json({ status: "error", message: "Receiver mobile number is not registered in wallet!" });
         }
         let receiverData = receiverSnap.val() || {};
+        const currentReceiverBal = Number(receiverData.balance) || 0;
 
         const exactDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
         const txnId = "TXN" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
 
         const updates = {};
         
-        updates[`users/${adminPhone}/balance`] = increment(-withdrawAmount);
-        updates[`users/${targetNumber}/balance`] = increment(withdrawAmount);
+        // Exact Mathematical calculation bypassed the increment bug
+        updates[`users/${adminPhone}/balance`] = currentAdminBal - withdrawAmount;
+        updates[`users/${targetNumber}/balance`] = currentReceiverBal + withdrawAmount;
 
         updates[`transactions/${txnId}`] = { 
             id: txnId, 
