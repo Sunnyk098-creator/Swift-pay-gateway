@@ -625,7 +625,7 @@
                     <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4"><i class="fas fa-code mr-2 text-gray-500"></i> Endpoint URL</p>
                     <div class="bg-gray-900 rounded-2xl p-5 relative shadow-lg">
                         <p class="text-sm font-mono text-gray-300 break-all leading-loose" id="ui-api-url-full">
-                            http://Swift-Pay-gateway.vercel.app/api?key=<span class="text-indigo-400" id="ui-api-key-url">SP-PENDING</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>
+                            https://Swift-Pay-gateway.vercel.app/api?key=<span class="text-indigo-400" id="ui-api-key-url">SP-PENDING</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>
                         </p>
                         <button id="btn-copy-api-url" onclick="" class="absolute top-4 right-4 w-8 h-8 bg-white/10 rounded-lg text-white flex items-center justify-center hover:bg-white/20 transition-colors"><i class="fas fa-copy"></i></button>
                     </div>
@@ -875,10 +875,10 @@
         function updateApiKeyUI() {
             let key = currentUser.apiKey || 'SP-PENDING'; 
             let domain = "Swift-Pay-gateway.vercel.app";
-            let apiUrl = `http://${domain}/api?key=${key}&paytm={number}&amount={amount}`;
+            let apiUrl = `https://${domain}/api?key=${key}&paytm={number}&amount={amount}`;
             
             let elUrlFull = document.getElementById('ui-api-url-full'); 
-            if(elUrlFull) elUrlFull.innerHTML = `http://${domain}/api?key=<span class="text-indigo-400">${key}</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>`;
+            if(elUrlFull) elUrlFull.innerHTML = `https://${domain}/api?key=<span class="text-indigo-400">${key}</span>&paytm=<span class="text-green-400">{number}</span>&amount=<span class="text-green-400">{amount}</span>`;
             
             let elDisp = document.getElementById('ui-api-key-display'); if(elDisp) elDisp.innerText = key;
             let elCopyBtnUrl = document.getElementById('btn-copy-api-url'); if(elCopyBtnUrl) elCopyBtnUrl.setAttribute('onclick', `copyText('${apiUrl}')`);
